@@ -1,287 +1,232 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="燃脂60天">
-<title>🔥 燃脂60天</title>
+<meta name="apple-mobile-web-app-title" content="燃脂挑战">
+<title>🔥 燃脂挑战</title>
 <style>
-:root{--bg:#0a0a0a;--card:#111;--border:#1a1a1a;--green:#00e09e;--blue:#00b4d8;--red:#ff6b6b;--dim:#555;--text:#e8e8e8}
+:root{--bg:#0a0a0a;--card:#111;--border:#1a1a1a;--green:#00e09e;--blue:#00b4d8;--red:#ff6b6b;--yellow:#ffd43b;--dim:#555;--text:#e8e8e8;--orange:#ff922b}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:420px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom,20px);-webkit-font-smoothing:antialiased}
-.header{padding:24px 20px 8px;text-align:center}
-.logo{font-size:22px;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header-sub{font-size:12px;color:#666;margin-top:4px;font-weight:500;letter-spacing:1px}
-.nav{display:flex;gap:4px;padding:8px 16px;margin-bottom:4px}
-.nav button{flex:1;padding:10px 0;border:none;border-radius:10px;background:transparent;color:#666;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-.nav button.active{background:var(--card);color:var(--green);box-shadow:0 0 0 1px #222}
+body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:420px;margin:0 auto;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased}
+/* setup */
+.setup{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px}
+.setup-logo{text-align:center;font-size:48px;margin-bottom:8px}
+.setup-title{text-align:center;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.setup-sub{text-align:center;font-size:13px;color:#555;margin-bottom:36px}
+.setup-field{margin-bottom:20px}
+.setup-label{font-size:12px;color:#888;font-weight:600;margin-bottom:6px;display:block}
+.setup-input{width:100%;background:var(--card);border:1px solid #333;border-radius:12px;padding:14px 16px;color:#fff;font-size:18px;font-weight:700;outline:none;font-family:monospace;text-align:center}
+.setup-input::placeholder{color:#333;font-weight:400}
+.setup-row{display:flex;gap:12px}
+.setup-row .setup-field{flex:1}
+.setup-unit{font-size:11px;color:#555;text-align:center;margin-top:4px}
+.start-btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:18px;font-weight:800;cursor:pointer;margin-top:12px;background:linear-gradient(135deg,var(--green),var(--blue));color:#000;transition:transform .15s}
+.start-btn:active{transform:scale(.97)}
+.setup-hint{text-align:center;font-size:11px;color:#444;margin-top:16px;line-height:1.6}
+/* header */
+.header{padding:20px 20px 6px;text-align:center}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-sub{font-size:11px;color:#666;margin-top:3px;font-weight:500;letter-spacing:.5px}
+/* bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;background:#0d0d0d;border-top:1px solid var(--border);padding:8px 0;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:100}
+.bottom-nav button{flex:1;border:none;background:none;color:#555;font-size:10px;font-weight:600;cursor:pointer;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .2s}
+.bottom-nav button.active{color:var(--green)}
+.bottom-nav button .nav-icon{font-size:20px}
+/* content */
 .content{padding:0 16px}
-.card{background:var(--card);border-radius:16px;padding:18px 16px;margin-bottom:12px;border:1px solid var(--border)}
-.card-title{font-size:15px;font-weight:700;margin-bottom:12px;color:#ccc}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:10px;color:#ccc}
 .card-row{display:flex;justify-content:space-between;align-items:center}
-.big-num{font-size:40px;font-weight:800;color:#fff;font-family:monospace;line-height:1}
-.dim{font-size:11px;color:var(--dim);margin-top:4px;font-weight:500}
-.progress-bg{background:var(--border);border-radius:6px;height:8px;margin-top:16px;overflow:hidden}
-.progress-fill{height:100%;border-radius:6px;transition:width .5s ease;background:linear-gradient(90deg,var(--green),var(--blue))}
-.progress-label{font-size:11px;color:var(--dim);margin-top:6px;text-align:center}
+.dim{font-size:11px;color:var(--dim);margin-top:3px;font-weight:500}
+/* quest */
+.quest-block{margin-bottom:10px}
+.quest-time{font-size:11px;font-weight:700;color:var(--dim);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.quest-time .qt-line{flex:1;height:1px;background:#222}
+.quest-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none}
+.quest-item:active{transform:scale(.98)}
+.quest-item.done{opacity:.5;border-color:#1a2a1a}
+.quest-item.done .q-check{background:var(--green);border-color:var(--green);color:#000}
+.q-check{width:28px;height:28px;border-radius:8px;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;transition:all .2s}
+.q-content{flex:1}
+.q-title{font-size:13px;font-weight:600}
+.q-desc{font-size:11px;color:var(--dim);margin-top:2px}
+.q-emoji{font-size:22px;flex-shrink:0}
+/* progress ring */
+.day-summary{display:flex;align-items:center;gap:16px;padding:4px 0}
+.ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
+.ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-num{font-size:18px;font-weight:800;color:#fff;font-family:monospace}
+.ring-label{font-size:9px;color:var(--dim)}
+.day-stats{flex:1}
+.day-stat-row{display:flex;justify-content:space-between;padding:3px 0}
+.day-stat-label{font-size:12px;color:#888}
+.day-stat-val{font-size:12px;font-weight:700;font-family:monospace}
+/* dinner menu */
+.menu-cat{margin-bottom:8px}
+.menu-cat-title{font-size:13px;font-weight:700;padding:8px 0 4px;color:#aaa;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.menu-cat-title:after{content:"▾";font-size:10px;color:#555}
+.menu-cat.open .menu-cat-title:after{content:"▴"}
+.menu-list{display:none;padding:0 0 4px}
+.menu-cat.open .menu-list{display:block}
+.menu-item{font-size:12px;color:#999;padding:5px 12px;line-height:1.6}
+.menu-note{font-size:10px;color:#555}
+/* weight */
+.big-num{font-size:36px;font-weight:800;color:#fff;font-family:monospace;line-height:1}
 .stat-box{text-align:center;flex:1}
-.stat-num{font-size:20px;font-weight:800;color:#fff;font-family:monospace}
-.check-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
-.check-label{font-size:14px;font-weight:500}
-.check-btn{padding:8px 18px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;min-width:80px}
-.check-on{background:var(--green);color:#000}
-.check-off{background:var(--border);color:var(--dim);border:1px solid #333}
-.input-row{display:flex;gap:8px;margin-top:12px}
+.stat-num{font-size:18px;font-weight:800;color:#fff;font-family:monospace}
+.progress-bg{background:var(--border);border-radius:6px;height:7px;margin-top:12px;overflow:hidden}
+.progress-fill{height:100%;border-radius:6px;transition:width .5s;background:linear-gradient(90deg,var(--green),var(--blue))}
+.progress-label{font-size:10px;color:var(--dim);margin-top:5px;text-align:center}
+.input-row{display:flex;gap:8px;margin-top:10px}
 .input-row input{flex:1;background:var(--border);border:1px solid #333;border-radius:10px;padding:12px 14px;color:#fff;font-size:16px;font-weight:600;outline:none;font-family:monospace}
 .save-btn{background:linear-gradient(135deg,var(--green),var(--blue));border:none;border-radius:10px;padding:12px 20px;color:#000;font-size:14px;font-weight:700;cursor:pointer}
-.saved-hint{font-size:12px;color:var(--green);margin-top:8px;font-weight:500}
-.rule-box{background:#0d0d0d;border-radius:10px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--border)}
-.rule-title{font-size:13px;font-weight:700;color:#aaa;margin-bottom:6px}
-.rule-text{font-size:12px;color:#666;line-height:1.8}
-textarea{width:100%;background:var(--border);border:1px solid #333;border-radius:10px;padding:10px 12px;color:#ccc;font-size:13px;resize:none;outline:none;font-family:inherit}
-.empty-chart{text-align:center;color:#444;font-size:13px;padding:30px 0}
-.hist-list{max-height:400px;overflow-y:auto}
-.hist-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
-.hist-date{font-size:13px;font-weight:600}
-.hist-day{font-size:10px;color:var(--dim);margin-left:6px;font-family:monospace}
-.hist-icons{display:flex;gap:10px;align-items:center}
-.hist-weight{font-size:13px;font-weight:700;color:var(--green);font-family:monospace;min-width:50px;text-align:right}
-.hist-none{font-size:13px;color:#333;min-width:50px;text-align:right}
-.hist-good{font-size:13px}
-.hist-bad{font-size:13px;opacity:.3}
-.quote{text-align:center;padding:16px 20px;font-size:13px;color:var(--dim);font-weight:500;font-style:italic}
-.reset-btn{width:100%;padding:12px;background:transparent;border:1px solid #2a1515;border-radius:10px;color:#663333;font-size:13px;font-weight:500;cursor:pointer;margin-top:8px}
+.saved-hint{font-size:11px;color:var(--green);margin-top:6px;font-weight:500}
+.chart-svg{width:100%;max-width:380px;display:block;margin:0 auto}
+.empty-chart{text-align:center;color:#444;font-size:12px;padding:24px 0}
+/* history */
+.hist-list{max-height:400px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.hist-date{font-size:12px;font-weight:600}
+.hist-day{font-size:10px;color:var(--dim);margin-left:5px;font-family:monospace}
+.hist-icons{display:flex;gap:8px;align-items:center;font-size:12px}
+.hist-weight{font-weight:700;color:var(--green);font-family:monospace;min-width:48px;text-align:right}
+.hist-none{color:#333;min-width:48px;text-align:right}
+.hist-pct{font-weight:700;font-family:monospace;min-width:36px;text-align:right}
+/* rest day */
+.rest-day{text-align:center;padding:60px 20px}
+.rest-emoji{font-size:64px;margin-bottom:16px}
+.rest-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px}
+.rest-sub{font-size:13px;color:#555}
+/* misc */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid #333;color:var(--green);padding:8px 20px;border-radius:20px;font-size:13px;z-index:999;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:opacity .3s;pointer-events:none}
 .toast.hide{opacity:0}
-.chart-svg{width:100%;max-width:380px;display:block;margin:0 auto}
+.reset-btn{width:100%;padding:12px;background:transparent;border:1px solid #2a1515;border-radius:10px;color:#663333;font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;margin-bottom:12px}
+.end-btn{width:100%;padding:12px;background:transparent;border:1px solid #1a2a1a;border-radius:10px;color:#336633;font-size:12px;font-weight:500;cursor:pointer;margin-bottom:6px}
+.streak-badge{display:inline-flex;align-items:center;gap:4px;background:#1a1500;border:1px solid #332a00;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--yellow)}
 </style>
 </head>
 <body>
-
 <div id="toast" class="toast hide"></div>
-
-<div class="header">
-  <div class="logo">🔥 燃脂60天</div>
-  <div class="header-sub">Roy · 81kg → 70kg</div>
-</div>
-
-<div class="nav">
-  <button id="tab-home" class="active" onclick="switchView('home')">首页</button>
-  <button id="tab-log" onclick="switchView('log')">记录</button>
-  <button id="tab-history" onclick="switchView('history')">历史</button>
-</div>
-
-<div class="content" id="view-home"></div>
-<div class="content" id="view-log" style="display:none"></div>
-<div class="content" id="view-history" style="display:none"></div>
-
+<div id="app"></div>
 <script>
-const START_DATE="2026-04-02",END_DATE="2026-06-01",START_WEIGHT=81,TARGET_WEIGHT=70,TOTAL_DAYS=60,STORAGE_KEY="burn60_data";
-
-function getToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
-function daysBetween(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/864e5)}
-function formatDate(ds){const d=new Date(ds+"T00:00:00");return `${d.getMonth()+1}月${d.getDate()}日`}
-function dayIndex(ds){return daysBetween(START_DATE,ds)}
-
-// data
-function loadData(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}catch{return{}}}
-function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
-let data=loadData();
-
-function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.remove("hide");setTimeout(()=>t.classList.add("hide"),1800)}
-
-function saveDayField(date,field,value){
-  if(!data[date])data[date]={};
-  data[date][field]=value;
-  saveData(data);
-  showToast("已保存 ✓");
-  render();
+const CK="burn60_config",DK="burn60_data";
+const DINNER_CATS=[
+{icon:"🍲",name:"찌개류",note:"밥 반 공기",items:["순두부찌개","된장찌개","김치찌개","매운탕/생선찌개"]},
+{icon:"🫕",name:"찜/조림류",note:"밥 반 공기 or 없이",items:["야채찜","아구찜","해물찜","코다리찜","갈치조림","닭볶음탕"]},
+{icon:"🥗",name:"샐러드/포케류",note:"",items:["닭가슴살 샐러드","연어 샐러드","포케 볼(밥 적게)","곡물 샐러드","두부 샐러드"]},
+{icon:"🥩",name:"구이류",note:"쌈채소 세트, 밥 없이",items:["삼겹살","목살구이","훈제오리+채소","닭가슴살 스테이크","고등어구이","삼치구이","보쌈(고기+쌈채소)"]},
+{icon:"🍜",name:"탕/국밥류",note:"밥 반 공기",items:["감자탕(뼈 위주)","삼계탕(반마리)","모듬국밥"]},
+{icon:"🍚",name:"한식 정식류",note:"밥 반 공기",items:["쌈밥 정식","비빔밥","회덮밥","제육볶음 정식","불고기 정식"]}
+];
+const FRUITS=["오렌지","사과","바나나"];
+const QUESTS=[
+{id:"water1",time:"07:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"morning"},
+{id:"weight",time:"07:00",emoji:"⚖️",title:"체중 측정",desc:"공복 상태로 기록",cat:"morning"},
+{id:"exercise",time:"07:10",emoji:"🏃",title:"계단 운동",desc:"5층 올라가기 + 벽 푸시업 15회 × 세트",cat:"exercise"},
+{id:"breakfast",time:"08:00",emoji:"🍳",title:"아침 식사",desc:"",cat:"meal"},
+{id:"water2",time:"10:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
+{id:"water3",time:"12:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
+{id:"lunch",time:"14:00",emoji:"🥒",title:"점심",desc:"오이 1개 + 삶은 계란 1개",cat:"meal"},
+{id:"water4",time:"16:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
+{id:"dinner",time:"18:00",emoji:"🍲",title:"저녁 식사",desc:"아래 카테고리에서 선택",cat:"meal"},
+{id:"water5",time:"19:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
+{id:"fasting",time:"20:00",emoji:"🚫",title:"금식 모드",desc:"물/차만 허용",cat:"night"}
+];
+// helpers
+function td(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function dBtw(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/864e5)}
+function fmtD(s){const d=new Date(s+"T00:00:00");return`${d.getMonth()+1}月${d.getDate()}日`}
+function addD(s,n){const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function dow(s){return new Date(s+"T00:00:00").getDay()}
+function isSunday(s){return dow(s)===0}
+function loadC(){try{return JSON.parse(localStorage.getItem(CK))}catch{return null}}
+function saveC(c){localStorage.setItem(CK,JSON.stringify(c))}
+function loadD(){try{return JSON.parse(localStorage.getItem(DK)||"{}")}catch{return{}}}
+function saveD(d){localStorage.setItem(DK,JSON.stringify(d))}
+let cfg=loadC(),data=loadD(),curView="quest",openCats={};
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.remove("hide");setTimeout(()=>t.classList.add("hide"),1800)}
+function sdf(date,f,v){if(!data[date])data[date]={};data[date][f]=v;saveD(data);toast("已保存 ✓");render()}
+function toggleQ(date,qid){const d=data[date]||{};const qs=d.quests||{};qs[qid]=!qs[qid];sdf(date,"quests",qs)}
+function getStreak(){if(!cfg)return 0;let s=0,d=new Date(td()+"T00:00:00");while(true){const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;if(ds<cfg.startDate)break;if(isSunday(ds)){d.setDate(d.getDate()-1);s++;continue}const e=data[ds];if(e&&e.quests){const done=Object.values(e.quests).filter(Boolean).length;if(done>=6){s++;d.setDate(d.getDate()-1)}else break}else break}return s}
+function latestW(){const e=Object.entries(data).filter(([,v])=>v.weight).sort((a,b)=>b[0].localeCompare(a[0]));return e.length>0?e[0][1].weight:cfg?cfg.startWeight:0}
+function questsDone(date){const d=data[date]||{};const qs=d.quests||{};return QUESTS.filter(q=>qs[q.id]).length}
+function weekNum(date){if(!cfg)return 1;return Math.min(8,Math.floor(dBtw(cfg.startDate,date)/7)+1)}
+function exSets(date){const w=weekNum(date);if(w<=1)return 7;if(w<=2)return 8;if(w<=4)return 10;return 12}
+// chart
+function buildChart(){if(!cfg)return"";const T=cfg.totalDays,sW=cfg.startWeight,tW=cfg.targetWeight;const entries=Object.entries(data).filter(([,v])=>v.weight).map(([k,v])=>({day:dBtw(cfg.startDate,k),w:v.weight})).filter(e=>e.day>=0).sort((a,b)=>a.day-b.day);if(!entries.length)return'<div class="empty-chart">暂无体重数据 📊</div>';const W=340,H=170,P=38,ws=entries.map(e=>e.w),mn=Math.min(...ws,tW)-1,mx=Math.max(...ws,sW)+1,xS=d=>P+(d/T)*(W-P*2),yS=w=>P+((mx-w)/(mx-mn))*(H-P*2);let s=`<svg viewBox="0 0 ${W} ${H}" class="chart-svg"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e09e" stop-opacity="0.3"/><stop offset="100%" stop-color="#00e09e" stop-opacity="0.02"/></linearGradient></defs>`;for(let w=Math.ceil(mn);w<=Math.floor(mx);w+=2)s+=`<line x1="${P}" y1="${yS(w)}" x2="${W-P}" y2="${yS(w)}" stroke="#333" stroke-width="0.5"/><text x="${P-4}" y="${yS(w)+3}" text-anchor="end" fill="#888" font-size="9" font-family="monospace">${w}</text>`;const tY=yS(tW);s+=`<line x1="${P}" y1="${tY}" x2="${W-P}" y2="${tY}" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4 3"/><text x="${W-P+2}" y="${tY+3}" fill="#ff6b6b" font-size="8" font-family="monospace">目标${tW}</text>`;if(entries.length>1){const pts=entries.map(e=>`${xS(e.day)},${yS(e.w)}`).join(" ");s+=`<polygon points="${xS(entries[0].day)},${H-P} ${pts} ${xS(entries[entries.length-1].day)},${H-P}" fill="url(#ag)"/><polyline points="${pts}" fill="none" stroke="#00e09e" stroke-width="2" stroke-linejoin="round"/>`}entries.forEach(e=>{s+=`<circle cx="${xS(e.day)}" cy="${yS(e.w)}" r="3.5" fill="#0a0a0a" stroke="#00e09e" stroke-width="2"/><text x="${xS(e.day)}" y="${yS(e.w)-7}" text-anchor="middle" fill="#ddd" font-size="8" font-weight="600" font-family="monospace">${e.w}</text>`});s+=`<text x="${P}" y="${H-6}" fill="#666" font-size="8" font-family="monospace">${fmtD(cfg.startDate)}</text><text x="${W-P}" y="${H-6}" text-anchor="end" fill="#666" font-size="8" font-family="monospace">${fmtD(cfg.endDate)}</text></svg>`;return s}
+// ring svg
+function ringSvg(pct){const r=30,c=2*Math.PI*r,dash=c*pct/100,gap=c-dash;const color=pct>=80?"var(--green)":pct>=50?"var(--yellow)":"var(--red)";return`<svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="#1a1a1a" stroke-width="6"/><circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="${dash} ${gap}" stroke-linecap="round" transform="rotate(-90 36 36)" style="transition:stroke-dasharray .5s"/></svg>`}
+// render
+function render(){const app=document.getElementById("app");if(!cfg){app.innerHTML=`<div class="setup"><div class="setup-logo">🔥</div><div class="setup-title">燃脂挑战</div><div class="setup-sub">设置目标，开始挑战</div><div class="setup-field"><label class="setup-label">当前体重</label><input class="setup-input" type="number" step="0.1" id="s-start" placeholder="例: 81.0"><div class="setup-unit">kg</div></div><div class="setup-row"><div class="setup-field"><label class="setup-label">目标体重</label><input class="setup-input" type="number" step="0.1" id="s-target" placeholder="例: 70.0"><div class="setup-unit">kg</div></div><div class="setup-field"><label class="setup-label">挑战天数</label><input class="setup-input" type="number" id="s-days" placeholder="例: 60" value="60"><div class="setup-unit">天</div></div></div><button class="start-btn" onclick="startC()">🚀 开始挑战</button><div class="setup-hint">数据保存在浏览器中<br>同一浏览器访问即可保留记录</div></div>`;return}
+const t=td(),tD=data[t]||{},el=Math.max(0,dBtw(cfg.startDate,t)),left=Math.max(0,dBtw(t,cfg.endDate)),pct=Math.min(100,Math.round(el/cfg.totalDays*100)),lw=latestW(),lost=cfg.startWeight-lw,toGo=lw-cfg.targetWeight,streak=getStreak(),sun=isSunday(t),qDone=questsDone(t),qTotal=QUESTS.length,qPct=sun?100:Math.round(qDone/qTotal*100);
+const dayLabel=`D${el+1}`;const wk=weekNum(t);const sets=exSets(t);const fruitIdx=el%3;const todayFruit=FRUITS[fruitIdx];
+let nav=`<div class="bottom-nav">`;
+[["quest","⚔️","任务"],["weight","⚖️","体重"],["history","📅","历史"]].forEach(([k,ic,l])=>{nav+=`<button class="${curView===k?"active":""}" onclick="curView='${k}';render()"><span class="nav-icon">${ic}</span>${l}</button>`});
+nav+=`</div>`;
+let body="";
+// QUEST VIEW
+if(curView==="quest"){
+if(sun){
+body=`<div class="rest-day"><div class="rest-emoji">😴</div><div class="rest-title">今天是休息日</div><div class="rest-sub">周日完全休息<br>饮食自由 · 运动自由<br><br>好好休息，明天继续 💪</div></div>`;
+}else{
+const qs=tD.quests||{};
+// day summary
+body+=`<div class="card"><div class="day-summary"><div class="ring-wrap">${ringSvg(qPct)}<div class="ring-text"><div class="ring-num">${qDone}/${qTotal}</div><div class="ring-label">完成</div></div></div><div class="day-stats"><div class="day-stat-row"><span class="day-stat-label">${dayLabel} · 第${wk}周</span><span class="streak-badge">🔥 ${streak}天</span></div><div class="day-stat-row"><span class="day-stat-label">剩余</span><span class="day-stat-val" style="color:var(--blue)">${left}天</span></div><div class="day-stat-row"><span class="day-stat-label">进度</span><span class="day-stat-val">${pct}%</span></div><div class="day-stat-row"><span class="day-stat-label">本周计划</span><span class="day-stat-val">계단 ${sets}세트</span></div></div></div></div>`;
+// quest blocks by time
+let lastTime="";
+QUESTS.forEach(q=>{
+const done=!!qs[q.id];
+let desc=q.desc;
+if(q.id==="breakfast")desc=`삶은 계란 2개 + ${todayFruit} 1개`;
+if(q.id==="exercise")desc=`5층×${sets}세트 + 벽 푸시업 15회×${sets}세트`;
+if(q.time!==lastTime){body+=`<div class="quest-time">${q.time}<span class="qt-line"></span></div>`;lastTime=q.time}
+body+=`<div class="quest-item ${done?"done":""}" onclick="toggleQ('${t}','${q.id}')"><div class="q-check">${done?"✓":""}</div><div class="q-content"><div class="q-title">${q.title}</div>${desc?`<div class="q-desc">${desc}</div>`:""}</div><div class="q-emoji">${q.emoji}</div></div>`;
+// dinner menu after dinner quest
+if(q.id==="dinner"){
+body+=`<div class="card" style="margin-top:2px;margin-bottom:10px">`;
+body+=`<div class="card-title">📋 오늘 저녁 메뉴 선택</div>`;
+DINNER_CATS.forEach((cat,ci)=>{
+const isOpen=openCats[ci];
+body+=`<div class="menu-cat ${isOpen?"open":""}"><div class="menu-cat-title" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${cat.name} ${cat.note?`<span class="menu-note">${cat.note}</span>`:""}</div><div class="menu-list">`;
+cat.items.forEach(item=>{body+=`<div class="menu-item">· ${item}</div>`});
+body+=`</div></div>`;
+});
+body+=`</div>`;
 }
-
-function toggleField(date,field){
-  const cur=data[date]&&data[date][field];
-  saveDayField(date,field,!cur);
+});
 }
-
-function getStreak(){
-  let streak=0,d=new Date(getToday()+"T00:00:00");
-  while(true){
-    const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    const e=data[ds];
-    if(e&&(e.diet||e.exercise)){streak++;d.setDate(d.getDate()-1);if(ds===START_DATE)break}else break;
-  }
-  return streak;
 }
-
-function latestWeight(){
-  const entries=Object.entries(data).filter(([,v])=>v.weight).sort((a,b)=>b[0].localeCompare(a[0]));
-  return entries.length>0?entries[0][1].weight:START_WEIGHT;
+// WEIGHT VIEW
+if(curView==="weight"){
+body+=`<div class="card"><div class="card-row"><div><div class="big-num">${lw}kg</div><div class="dim">当前体重</div></div><div style="text-align:right"><div class="big-num" style="color:${lost>0?"var(--green)":"var(--red)"}"> ${lost>0?"-":"+"}${Math.abs(lost).toFixed(1)}</div><div class="dim">已减(kg)</div></div></div><div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-label">${cfg.startWeight}kg → ${cfg.targetWeight}kg · 距目标 ${toGo.toFixed(1)}kg</div></div>`;
+body+=`<div class="card"><div class="card-title">⚖️ 记录体重</div><div style="font-size:11px;color:#555">建议每天早上空腹称重</div><div class="input-row"><input type="number" step="0.1" placeholder="输入体重(kg)" id="wi" value="${tD.weight||""}"/><button class="save-btn" onclick="saveW()">保存</button></div>${tD.weight?`<div class="saved-hint">今日已记录: ${tD.weight}kg ✓</div>`:""}</div>`;
+body+=`<div class="card"><div class="card-title">📉 趋势</div>${buildChart()}</div>`;
+body+=`<div class="card"><div class="card-title">📊 统计</div><div class="card-row"><div class="stat-box"><div class="stat-num">${Object.values(data).filter(v=>v.weight).length}</div><div class="dim">记录次数</div></div><div class="stat-box"><div class="stat-num">${streak}</div><div class="dim">连续打卡</div></div><div class="stat-box"><div class="stat-num">${el}</div><div class="dim">已过天数</div></div></div></div>`;
 }
-
-function buildChart(){
-  const entries=Object.entries(data).filter(([,v])=>v.weight).map(([k,v])=>({day:dayIndex(k),weight:v.weight})).sort((a,b)=>a.day-b.day);
-  if(entries.length<1)return'<div class="empty-chart">暂无体重数据，快去记录吧 📊</div>';
-  const W=340,H=180,P=38;
-  const weights=entries.map(e=>e.weight);
-  const minW=Math.min(...weights,TARGET_WEIGHT)-1,maxW=Math.max(...weights,START_WEIGHT)+1;
-  const xS=d=>P+(d/TOTAL_DAYS)*(W-P*2),yS=w=>P+((maxW-w)/(maxW-minW))*(H-P*2);
-  let svg=`<svg viewBox="0 0 ${W} ${H}" class="chart-svg"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e09e" stop-opacity="0.3"/><stop offset="100%" stop-color="#00e09e" stop-opacity="0.02"/></linearGradient></defs>`;
-  // y grid
-  for(let w=Math.ceil(minW);w<=Math.floor(maxW);w+=2){
-    svg+=`<line x1="${P}" y1="${yS(w)}" x2="${W-P}" y2="${yS(w)}" stroke="#333" stroke-width="0.5"/>`;
-    svg+=`<text x="${P-4}" y="${yS(w)+3}" text-anchor="end" fill="#888" font-size="9" font-family="monospace">${w}</text>`;
-  }
-  // target
-  const tY=yS(TARGET_WEIGHT);
-  svg+=`<line x1="${P}" y1="${tY}" x2="${W-P}" y2="${tY}" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4 3"/>`;
-  svg+=`<text x="${W-P+2}" y="${tY+3}" fill="#ff6b6b" font-size="8" font-family="monospace">目标${TARGET_WEIGHT}</text>`;
-  // area + line
-  if(entries.length>1){
-    const pts=entries.map(e=>`${xS(e.day)},${yS(e.weight)}`).join(" ");
-    const area=`${xS(entries[0].day)},${H-P} ${pts} ${xS(entries[entries.length-1].day)},${H-P}`;
-    svg+=`<polygon points="${area}" fill="url(#ag)"/>`;
-    svg+=`<polyline points="${pts}" fill="none" stroke="#00e09e" stroke-width="2" stroke-linejoin="round"/>`;
-  }
-  // dots
-  entries.forEach(e=>{
-    svg+=`<circle cx="${xS(e.day)}" cy="${yS(e.weight)}" r="4" fill="#0a0a0a" stroke="#00e09e" stroke-width="2"/>`;
-    svg+=`<text x="${xS(e.day)}" y="${yS(e.weight)-8}" text-anchor="middle" fill="#ddd" font-size="8" font-weight="600" font-family="monospace">${e.weight}</text>`;
-  });
-  svg+=`<text x="${P}" y="${H-8}" fill="#666" font-size="8" font-family="monospace">${formatDate(START_DATE)}</text>`;
-  svg+=`<text x="${W-P}" y="${H-8}" text-anchor="end" fill="#666" font-size="8" font-family="monospace">${formatDate(END_DATE)}</text>`;
-  svg+='</svg>';
-  return svg;
+// HISTORY VIEW
+if(curView==="history"){
+const days=Math.min(el+1,cfg.totalDays);
+let h="";
+for(let i=0;i<days;i++){
+const ds=addD(cfg.startDate,el-i),e=data[ds]||{},isT=ds===t,di=dBtw(cfg.startDate,ds),sun2=isSunday(ds);
+const qd=sun2?"🌙":e.quests?Object.values(e.quests).filter(Boolean).length+"/"+qTotal:"0/"+qTotal;
+const qp=sun2?100:e.quests?Math.round(Object.values(e.quests).filter(Boolean).length/qTotal*100):0;
+const pColor=sun2?"#555":qp>=80?"var(--green)":qp>=50?"var(--yellow)":"var(--red)";
+h+=`<div class="hist-item"><div class="hist-date">${isT?"今天":fmtD(ds)}${sun2?" 🌙":""}<span class="hist-day">D${di+1}</span></div><div class="hist-icons">${e.weight?`<span class="hist-weight">${e.weight}kg</span>`:'<span class="hist-none">--</span>'}<span class="hist-pct" style="color:${pColor}">${qd}</span></div></div>`;
 }
-
-// views
-let currentView="home";
-function switchView(v){
-  currentView=v;
-  ["home","log","history"].forEach(x=>{
-    document.getElementById("view-"+x).style.display=x===v?"block":"none";
-    document.getElementById("tab-"+x).classList.toggle("active",x===v);
-  });
-  render();
+body+=`<div class="card"><div class="card-title">📅 历史记录</div><div class="hist-list">${h||'<div class="empty-chart">暂无记录</div>'}</div></div>`;
+body+=`<div class="card"><div class="card-title">⚙️ 挑战信息</div><div style="font-size:12px;color:#666;line-height:2">开始: ${fmtD(cfg.startDate)} · 结束: ${fmtD(cfg.endDate)}<br>${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}天</div></div>`;
+body+=`<button class="end-btn" onclick="endC()">🔄 结束挑战 · 重新开始</button><button class="reset-btn" onclick="resetAll()">🗑 清除所有数据</button>`;
 }
-
-function render(){
-  const td=getToday(),todayData=data[td]||{};
-  const elapsed=Math.max(0,daysBetween(START_DATE,td));
-  const left=Math.max(0,daysBetween(td,END_DATE));
-  const pct=Math.min(100,Math.round((elapsed/TOTAL_DAYS)*100));
-  const lw=latestWeight(),lost=START_WEIGHT-lw,toGo=lw-TARGET_WEIGHT;
-  const streak=getStreak();
-
-  // HOME
-  if(currentView==="home"){
-    let quote=left>50?"刚开始最难，撑过前两周就赢了一半 🚀":left>30?"坚持了这么久，别浪费之前的努力 💪":left>10?"冲刺阶段！终点就在前方 🏁":left>0?"最后几天，咬牙坚持到底！🔥":"挑战完成！你做到了 🎉";
-    document.getElementById("view-home").innerHTML=`
-      <div class="card">
-        <div class="card-row"><div><div class="big-num">${left}</div><div class="dim">剩余天数</div></div><div style="text-align:right"><div class="big-num">${streak}</div><div class="dim">连续打卡</div></div></div>
-        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="progress-label">${pct}% 已完成 · 第 ${elapsed}/${TOTAL_DAYS} 天</div>
-      </div>
-      <div class="card">
-        <div class="card-title">📉 体重趋势</div>
-        ${buildChart()}
-        <div class="card-row" style="margin-top:12px">
-          <div class="stat-box"><div class="stat-num" style="color:${lost>0?"var(--green)":"var(--red)"}">${lost>0?"-":"+"}${Math.abs(lost).toFixed(1)}kg</div><div class="dim">已减</div></div>
-          <div class="stat-box"><div class="stat-num">${lw}kg</div><div class="dim">当前</div></div>
-          <div class="stat-box"><div class="stat-num" style="color:var(--red)">${toGo.toFixed(1)}kg</div><div class="dim">距目标</div></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">📋 今日打卡</div>
-        <div class="check-row"><span class="check-label">🍚 饮食达标</span><button class="check-btn ${todayData.diet?"check-on":"check-off"}" onclick="toggleField('${td}','diet')">${todayData.diet?"✓":"✗"}</button></div>
-        <div class="check-row"><span class="check-label">💪 运动完成</span><button class="check-btn ${todayData.exercise?"check-on":"check-off"}" onclick="toggleField('${td}','exercise')">${todayData.exercise?"✓":"✗"}</button></div>
-      </div>
-      <div class="quote">${quote}</div>`;
-  }
-
-  // LOG
-  if(currentView==="log"){
-    document.getElementById("view-log").innerHTML=`
-      <div class="card">
-        <div class="card-title">⚖️ 记录体重</div>
-        <div class="dim">建议每天早上空腹称重</div>
-        <div class="input-row">
-          <input type="number" step="0.1" placeholder="输入体重 (kg)" id="weight-input" value="${todayData.weight||""}" />
-          <button class="save-btn" onclick="saveWeight()">保存</button>
-        </div>
-        ${todayData.weight?`<div class="saved-hint">今日已记录: ${todayData.weight}kg ✓</div>`:""}
-      </div>
-      <div class="card">
-        <div class="card-title">📋 今日打卡</div>
-        <div class="rule-box">
-          <div class="rule-title">🍚 饮食规则</div>
-          <div class="rule-text">· 米饭半碗（拳头大小的一半）</div>
-          <div class="rule-text">· 每餐必须有蛋白质（鸡蛋/肉/鱼/豆腐）</div>
-          <div class="rule-text">· 面包、面条、零食、饮料、酒 = 禁止</div>
-          <div class="rule-text">· 外卖只能点汤饭/家常菜类</div>
-          <div class="rule-text">· 晚7点后只喝水或茶</div>
-        </div>
-        <div class="check-row"><span class="check-label">今天饮食达标了吗？</span><button class="check-btn ${todayData.diet?"check-on":"check-off"}" onclick="toggleField('${td}','diet')">${todayData.diet?"✓ 达标":"✗ 未达标"}</button></div>
-        <div class="rule-box" style="margin-top:16px">
-          <div class="rule-title">💪 运动规则</div>
-          <div class="rule-text">· 快走/爬坡 30分钟</div>
-          <div class="rule-text">· 深蹲+俯卧撑+平板支撑 各3组</div>
-          <div class="rule-text">· 每周至少5天</div>
-        </div>
-        <div class="check-row"><span class="check-label">今天运动完成了吗？</span><button class="check-btn ${todayData.exercise?"check-on":"check-off"}" onclick="toggleField('${td}','exercise')">${todayData.exercise?"✓ 完成":"✗ 未完成"}</button></div>
-      </div>
-      <div class="card">
-        <div class="card-title">📝 备注</div>
-        <textarea id="memo-input" placeholder="今天吃了什么？状态如何？" rows="3" onblur="saveMemo()">${todayData.memo||""}</textarea>
-      </div>`;
-  }
-
-  // HISTORY
-  if(currentView==="history"){
-    const days=Math.min(elapsed+1,TOTAL_DAYS);
-    let histHtml="";
-    for(let i=0;i<days;i++){
-      const d=new Date(START_DATE+"T00:00:00");
-      d.setDate(d.getDate()+(elapsed-i));
-      const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      const e=data[ds]||{},isT=ds===td;
-      histHtml+=`<div class="hist-item">
-        <div class="hist-date">${isT?"今天":formatDate(ds)}<span class="hist-day">D${dayIndex(ds)+1}</span></div>
-        <div class="hist-icons">
-          ${e.weight?`<span class="hist-weight">${e.weight}kg</span>`:'<span class="hist-none">--</span>'}
-          <span class="${e.diet?"hist-good":"hist-bad"}">${e.diet?"🍚✓":"🍚✗"}</span>
-          <span class="${e.exercise?"hist-good":"hist-bad"}">${e.exercise?"💪✓":"💪✗"}</span>
-        </div>
-      </div>`;
-    }
-    const dietDays=Object.values(data).filter(v=>v.diet).length;
-    const exDays=Object.values(data).filter(v=>v.exercise).length;
-    const wDays=Object.values(data).filter(v=>v.weight).length;
-
-    document.getElementById("view-history").innerHTML=`
-      <div class="card"><div class="card-title">📅 历史记录</div><div class="hist-list">${histHtml}</div></div>
-      <div class="card">
-        <div class="card-title">📊 统计</div>
-        <div class="card-row"><div class="stat-box"><div class="stat-num">${dietDays}</div><div class="dim">饮食达标天数</div></div><div class="stat-box"><div class="stat-num">${exDays}</div><div class="dim">运动完成天数</div></div></div>
-        <div class="card-row" style="margin-top:12px"><div class="stat-box"><div class="stat-num">${wDays}</div><div class="dim">体重记录次数</div></div><div class="stat-box"><div class="stat-num">${streak}</div><div class="dim">当前连续打卡</div></div></div>
-      </div>
-      <button class="reset-btn" onclick="resetAll()">🗑 重置所有数据</button>`;
-  }
-}
-
-function saveWeight(){
-  const v=parseFloat(document.getElementById("weight-input").value);
-  if(v>40&&v<150){saveDayField(getToday(),"weight",v)}else{showToast("请输入有效体重")}
-}
-function saveMemo(){
-  const v=document.getElementById("memo-input").value;
-  if(!data[getToday()])data[getToday()]={};
-  data[getToday()].memo=v;
-  saveData(data);
-}
-function resetAll(){if(confirm("确定要清除所有数据吗？此操作不可恢复。")){data={};saveData(data);showToast("已重置");render()}}
-
+app.innerHTML=`<div class="header"><div class="logo">🔥 燃脂挑战</div><div class="header-sub">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}天</div></div><div class="content">${body}</div>${nav}`}
+function startC(){const sw=parseFloat(document.getElementById("s-start").value),tw=parseFloat(document.getElementById("s-target").value),days=parseInt(document.getElementById("s-days").value);if(!sw||sw<30||sw>300){toast("请输入有效体重");return}if(!tw||tw<30||tw>300){toast("请输入有效目标体重");return}if(!days||days<7||days>365){toast("天数: 7~365");return}const today=td();cfg={startWeight:sw,targetWeight:tw,totalDays:days,startDate:today,endDate:addD(today,days)};saveC(cfg);data={};data[today]={weight:sw};saveD(data);curView="quest";toast("挑战开始！加油 💪");render()}
+function saveW(){const v=parseFloat(document.getElementById("wi").value);if(v>30&&v<300){sdf(td(),"weight",v)}else{toast("请输入有效体重")}}
+function endC(){if(confirm("确定结束当前挑战？记录将被清除。")){localStorage.removeItem(CK);localStorage.removeItem(DK);cfg=null;data={};curView="quest";render();toast("已重置")}}
+function resetAll(){if(confirm("清除所有数据？不可恢复。")){localStorage.removeItem(CK);localStorage.removeItem(DK);cfg=null;data={};curView="quest";render();toast("已清除")}}
 render();
 </script>
 </body>

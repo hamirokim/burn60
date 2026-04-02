@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9,224 +8,345 @@
 <meta name="apple-mobile-web-app-title" content="燃脂挑战">
 <title>🔥 燃脂挑战</title>
 <style>
-:root{--bg:#0a0a0a;--card:#111;--border:#1a1a1a;--green:#00e09e;--blue:#00b4d8;--red:#ff6b6b;--yellow:#ffd43b;--dim:#555;--text:#e8e8e8;--orange:#ff922b}
+:root{--cy:#00fff2;--mg:#ff00ff;--ny:#f0ff00;--np:#ff2d7b;--eb:#0080ff;--nv:#bf00ff;--bg:#06060e;--glass:rgba(255,255,255,0.04);--glass2:rgba(255,255,255,0.07);--gborder:rgba(255,255,255,0.08);--gborder2:rgba(255,255,255,0.12);--dim:#556;--txt:#d8dce8}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:420px;margin:0 auto;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased}
+body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;max-width:420px;margin:0 auto;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px));-webkit-font-smoothing:antialiased;overflow-x:hidden;background-image:radial-gradient(ellipse at 20% 50%,rgba(0,255,242,.04) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(255,0,255,.03) 0%,transparent 50%)}
+/* glass card */
+.gc{background:var(--glass);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--gborder);box-shadow:0 0 20px rgba(0,0,0,.3)}
+.gc2{background:var(--glass2);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid var(--gborder2)}
+/* neon glow */
+.glow-cy{text-shadow:0 0 8px rgba(0,255,242,.5)}
+.glow-mg{text-shadow:0 0 8px rgba(255,0,255,.5)}
+.glow-ny{text-shadow:0 0 8px rgba(240,255,0,.5)}
+.glow-np{text-shadow:0 0 8px rgba(255,45,123,.5)}
+.glow-eb{text-shadow:0 0 8px rgba(0,128,255,.5)}
+.glow-nv{text-shadow:0 0 8px rgba(191,0,255,.5)}
 /* setup */
 .setup{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px}
-.setup-logo{text-align:center;font-size:48px;margin-bottom:8px}
-.setup-title{text-align:center;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
-.setup-sub{text-align:center;font-size:13px;color:#555;margin-bottom:36px}
-.setup-field{margin-bottom:20px}
-.setup-label{font-size:12px;color:#888;font-weight:600;margin-bottom:6px;display:block}
-.setup-input{width:100%;background:var(--card);border:1px solid #333;border-radius:12px;padding:14px 16px;color:#fff;font-size:18px;font-weight:700;outline:none;font-family:monospace;text-align:center}
-.setup-input::placeholder{color:#333;font-weight:400}
-.setup-row{display:flex;gap:12px}
-.setup-row .setup-field{flex:1}
-.setup-unit{font-size:11px;color:#555;text-align:center;margin-top:4px}
-.start-btn{width:100%;padding:16px;border:none;border-radius:14px;font-size:18px;font-weight:800;cursor:pointer;margin-top:12px;background:linear-gradient(135deg,var(--green),var(--blue));color:#000;transition:transform .15s}
-.start-btn:active{transform:scale(.97)}
-.setup-hint{text-align:center;font-size:11px;color:#444;margin-top:16px;line-height:1.6}
+.setup-logo{text-align:center;font-size:48px;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(0,255,242,.4))}
+.setup-title{text-align:center;font-size:28px;font-weight:800;color:var(--cy);margin-bottom:4px;text-shadow:0 0 20px rgba(0,255,242,.4)}
+.setup-sub{text-align:center;font-size:13px;color:var(--dim);margin-bottom:32px}
+.sf{margin-bottom:18px}
+.sl{font-size:11px;color:#889;font-weight:600;margin-bottom:5px;display:block}
+.si{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--gborder2);border-radius:12px;padding:13px 16px;color:#fff;font-size:17px;font-weight:700;outline:none;font-family:monospace;text-align:center;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.si:focus{border-color:var(--cy);box-shadow:0 0 12px rgba(0,255,242,.2)}
+.si::placeholder{color:#334;font-weight:400}
+.sr{display:flex;gap:10px}.sr .sf{flex:1}
+.su{font-size:10px;color:#556;text-align:center;margin-top:3px}
+.sbtn{width:100%;padding:16px;border:none;border-radius:14px;font-size:18px;font-weight:800;cursor:pointer;margin-top:12px;background:linear-gradient(135deg,var(--cy),var(--eb));color:#000;box-shadow:0 0 30px rgba(0,255,242,.3);transition:transform .1s}
+.sbtn:active{transform:scale(.96)}
+.shint{text-align:center;font-size:10px;color:#445;margin-top:16px;line-height:1.6}
 /* header */
-.header{padding:20px 20px 6px;text-align:center}
-.logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header-sub{font-size:11px;color:#666;margin-top:3px;font-weight:500;letter-spacing:.5px}
+.hdr{padding:14px 16px 2px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:17px;font-weight:800;color:var(--cy);text-shadow:0 0 15px rgba(0,255,242,.4)}
+.hdr-r{display:flex;gap:6px;align-items:center}
+.lang-btn{background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--gborder);border-radius:8px;padding:4px 8px;color:#889;font-size:9px;font-weight:600;cursor:pointer}
+.lvl-b{background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(240,255,0,.2);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;color:var(--ny);text-shadow:0 0 8px rgba(240,255,0,.3)}
+.hdr-sub{font-size:9px;color:#556;padding:0 16px 4px;font-weight:500}
 /* bottom nav */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;background:#0d0d0d;border-top:1px solid var(--border);padding:8px 0;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:100}
-.bottom-nav button{flex:1;border:none;background:none;color:#555;font-size:10px;font-weight:600;cursor:pointer;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .2s}
-.bottom-nav button.active{color:var(--green)}
-.bottom-nav button .nav-icon{font-size:20px}
-/* content */
-.content{padding:0 16px}
-.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:10px;border:1px solid var(--border)}
-.card-title{font-size:14px;font-weight:700;margin-bottom:10px;color:#ccc}
-.card-row{display:flex;justify-content:space-between;align-items:center}
-.dim{font-size:11px;color:var(--dim);margin-top:3px;font-weight:500}
-/* quest */
-.quest-block{margin-bottom:10px}
-.quest-time{font-size:11px;font-weight:700;color:var(--dim);margin-bottom:6px;display:flex;align-items:center;gap:6px}
-.quest-time .qt-line{flex:1;height:1px;background:#222}
-.quest-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none}
-.quest-item:active{transform:scale(.98)}
-.quest-item.done{opacity:.5;border-color:#1a2a1a}
-.quest-item.done .q-check{background:var(--green);border-color:var(--green);color:#000}
-.q-check{width:28px;height:28px;border-radius:8px;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;transition:all .2s}
-.q-content{flex:1}
-.q-title{font-size:13px;font-weight:600}
-.q-desc{font-size:11px;color:var(--dim);margin-top:2px}
-.q-emoji{font-size:22px;flex-shrink:0}
-/* progress ring */
-.day-summary{display:flex;align-items:center;gap:16px;padding:4px 0}
-.ring-wrap{position:relative;width:72px;height:72px;flex-shrink:0}
-.ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-.ring-num{font-size:18px;font-weight:800;color:#fff;font-family:monospace}
-.ring-label{font-size:9px;color:var(--dim)}
-.day-stats{flex:1}
-.day-stat-row{display:flex;justify-content:space-between;padding:3px 0}
-.day-stat-label{font-size:12px;color:#888}
-.day-stat-val{font-size:12px;font-weight:700;font-family:monospace}
-/* dinner menu */
-.menu-cat{margin-bottom:8px}
-.menu-cat-title{font-size:13px;font-weight:700;padding:8px 0 4px;color:#aaa;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.menu-cat-title:after{content:"▾";font-size:10px;color:#555}
-.menu-cat.open .menu-cat-title:after{content:"▴"}
-.menu-list{display:none;padding:0 0 4px}
-.menu-cat.open .menu-list{display:block}
-.menu-item{font-size:12px;color:#999;padding:5px 12px;line-height:1.6}
-.menu-note{font-size:10px;color:#555}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;display:flex;background:rgba(6,6,14,.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:1px solid var(--gborder);padding:6px 0;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:100}
+.bnav button{flex:1;border:none;background:none;color:#445;font-size:9px;font-weight:600;cursor:pointer;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:1px;transition:color .2s}
+.bnav button.act{color:var(--cy)}
+.bnav .ni{font-size:18px}
+.ct{padding:0 14px}
+.ct2{font-size:13px;font-weight:700;margin-bottom:8px;color:#aab}
+.cr{display:flex;justify-content:space-between;align-items:center}
+.dm{font-size:10px;color:var(--dim);margin-top:2px;font-weight:500}
+/* quest items */
+.qt{font-size:9px;font-weight:700;color:#445;margin:8px 0 4px;display:flex;align-items:center;gap:6px}
+.qt .ql{flex:1;height:1px;background:rgba(255,255,255,.05)}
+.qi{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--glass);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--gborder);border-radius:12px;margin-bottom:5px;cursor:pointer;transition:all .15s}
+.qi:active{transform:scale(.98)}
+.qi.dn{border-color:rgba(0,255,242,.15);background:rgba(0,255,242,.03)}
+.qi.dn .qc{background:var(--cy);border-color:var(--cy);color:#000;box-shadow:0 0 10px rgba(0,255,242,.3)}
+.qc{width:26px;height:26px;border-radius:7px;border:2px solid #334;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;transition:all .2s}
+.qct{flex:1}.qct .t{font-size:12px;font-weight:600}.qct .d{font-size:10px;color:var(--dim);margin-top:1px}
+.qe{font-size:20px;flex-shrink:0}
+/* ring */
+.ds{display:flex;align-items:center;gap:14px;padding:2px 0}
+.rw{position:relative;width:66px;height:66px;flex-shrink:0}
+.rtx{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.rn{font-size:16px;font-weight:800;color:#fff;font-family:monospace}
+.rl{font-size:8px;color:var(--dim)}
+.dst{flex:1}.dsr{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
+.dsl{color:#778}.dsv{font-weight:700;font-family:monospace}
+/* xp */
+.xpbar{background:rgba(255,255,255,.06);border-radius:4px;height:5px;margin-top:5px;overflow:hidden}
+.xpfill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--ny),var(--mg));transition:width .5s;box-shadow:0 0 6px rgba(240,255,0,.3)}
+.xplbl{font-size:8px;color:#556;margin-top:2px;text-align:right}
+/* menu */
+.mc{margin-bottom:4px}
+.mct{font-size:11px;font-weight:700;padding:6px 0 3px;color:#889;cursor:pointer;display:flex;justify-content:space-between}
+.mct:after{content:"▾";font-size:9px;color:#445}
+.mc.op .mct:after{content:"▴"}
+.ml{display:none;padding:0 0 2px}.mc.op .ml{display:block}
+.mi{font-size:10px;color:#778;padding:3px 10px;line-height:1.6}
+.mn{font-size:8px;color:#556}
 /* weight */
-.big-num{font-size:36px;font-weight:800;color:#fff;font-family:monospace;line-height:1}
-.stat-box{text-align:center;flex:1}
-.stat-num{font-size:18px;font-weight:800;color:#fff;font-family:monospace}
-.progress-bg{background:var(--border);border-radius:6px;height:7px;margin-top:12px;overflow:hidden}
-.progress-fill{height:100%;border-radius:6px;transition:width .5s;background:linear-gradient(90deg,var(--green),var(--blue))}
-.progress-label{font-size:10px;color:var(--dim);margin-top:5px;text-align:center}
-.input-row{display:flex;gap:8px;margin-top:10px}
-.input-row input{flex:1;background:var(--border);border:1px solid #333;border-radius:10px;padding:12px 14px;color:#fff;font-size:16px;font-weight:600;outline:none;font-family:monospace}
-.save-btn{background:linear-gradient(135deg,var(--green),var(--blue));border:none;border-radius:10px;padding:12px 20px;color:#000;font-size:14px;font-weight:700;cursor:pointer}
-.saved-hint{font-size:11px;color:var(--green);margin-top:6px;font-weight:500}
-.chart-svg{width:100%;max-width:380px;display:block;margin:0 auto}
-.empty-chart{text-align:center;color:#444;font-size:12px;padding:24px 0}
+.bn{font-size:32px;font-weight:800;color:#fff;font-family:monospace;line-height:1}
+.sb{text-align:center;flex:1}
+.sn{font-size:17px;font-weight:800;color:#fff;font-family:monospace}
+.pb{background:rgba(255,255,255,.06);border-radius:5px;height:6px;margin-top:10px;overflow:hidden}
+.pf{height:100%;border-radius:5px;transition:width .5s;background:linear-gradient(90deg,var(--cy),var(--eb));box-shadow:0 0 8px rgba(0,255,242,.2)}
+.plb{font-size:9px;color:var(--dim);margin-top:4px;text-align:center}
+.ir{display:flex;gap:8px;margin-top:8px}
+.ir input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--gborder2);border-radius:10px;padding:11px 12px;color:#fff;font-size:15px;font-weight:600;outline:none;font-family:monospace;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.svb{background:linear-gradient(135deg,var(--cy),var(--eb));border:none;border-radius:10px;padding:11px 18px;color:#000;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 0 12px rgba(0,255,242,.2)}
+.svh{font-size:10px;color:var(--cy);margin-top:5px;font-weight:500}
+.csv{width:100%;max-width:380px;display:block;margin:0 auto}
+.ech{text-align:center;color:#445;font-size:11px;padding:20px 0}
+/* info row */
+.info-r{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.info-r:last-child{border:none}
+.info-l{font-size:11px;color:#667}.info-v{font-size:11px;font-weight:700;font-family:monospace}
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:8px}
+.cal-h{font-size:8px;color:#556;text-align:center;font-weight:600;padding:2px 0}
+.cal-d{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#334;background:rgba(255,255,255,.02)}
+.cal-d.c1{background:rgba(0,255,242,.12);color:var(--cy);box-shadow:inset 0 0 6px rgba(0,255,242,.1)}
+.cal-d.c2{background:rgba(240,255,0,.1);color:var(--ny)}
+.cal-d.c3{background:rgba(255,45,123,.1);color:var(--np)}
+.cal-d.c4{background:rgba(255,255,255,.02);color:#445}
+.cal-d.cs{background:rgba(191,0,255,.08);color:var(--nv)}
 /* history */
-.hist-list{max-height:400px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.hist-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
-.hist-date{font-size:12px;font-weight:600}
-.hist-day{font-size:10px;color:var(--dim);margin-left:5px;font-family:monospace}
-.hist-icons{display:flex;gap:8px;align-items:center;font-size:12px}
-.hist-weight{font-weight:700;color:var(--green);font-family:monospace;min-width:48px;text-align:right}
-.hist-none{color:#333;min-width:48px;text-align:right}
-.hist-pct{font-weight:700;font-family:monospace;min-width:36px;text-align:right}
+.hl{max-height:350px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.hd{font-weight:600}.hdy{font-size:9px;color:var(--dim);margin-left:4px;font-family:monospace}
+.hic{display:flex;gap:7px;align-items:center}
+.hw{font-weight:700;color:var(--cy);font-family:monospace;min-width:44px;text-align:right}
+.hn{color:#334;min-width:44px;text-align:right}
+.hp{font-weight:700;font-family:monospace;min-width:32px;text-align:right}
+/* badges */
+.bdg{display:inline-flex;align-items:center;gap:4px;background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(240,255,0,.15);border-radius:8px;padding:4px 8px;font-size:9px;font-weight:600;color:var(--ny);margin:2px}
+.bdg.locked{opacity:.2;filter:grayscale(1);border-color:var(--gborder)}
+.bdg-next{font-size:10px;color:#778;padding:8px 0;border-top:1px solid rgba(255,255,255,.04);margin-top:8px}
 /* rest day */
-.rest-day{text-align:center;padding:60px 20px}
-.rest-emoji{font-size:64px;margin-bottom:16px}
-.rest-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:8px}
-.rest-sub{font-size:13px;color:#555}
-/* misc */
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid #333;color:var(--green);padding:8px 20px;border-radius:20px;font-size:13px;z-index:999;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:opacity .3s;pointer-events:none}
+.rest{text-align:center;padding:50px 20px}
+.rest .re{font-size:56px;margin-bottom:12px;filter:drop-shadow(0 0 20px rgba(191,0,255,.3))}
+.rest .rt{font-size:18px;font-weight:800;color:var(--nv);text-shadow:0 0 15px rgba(191,0,255,.4)}
+.rest .rs{font-size:12px;color:#556;line-height:1.8;margin-top:8px}
+/* toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--glass2);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(0,255,242,.2);color:var(--cy);padding:6px 18px;border-radius:18px;font-size:12px;z-index:999;font-weight:600;box-shadow:0 0 20px rgba(0,255,242,.15);transition:opacity .3s;pointer-events:none}
 .toast.hide{opacity:0}
-.reset-btn{width:100%;padding:12px;background:transparent;border:1px solid #2a1515;border-radius:10px;color:#663333;font-size:12px;font-weight:500;cursor:pointer;margin-top:6px;margin-bottom:12px}
-.end-btn{width:100%;padding:12px;background:transparent;border:1px solid #1a2a1a;border-radius:10px;color:#336633;font-size:12px;font-weight:500;cursor:pointer;margin-bottom:6px}
-.streak-badge{display:inline-flex;align-items:center;gap:4px;background:#1a1500;border:1px solid #332a00;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--yellow)}
+.rbtn{width:100%;padding:10px;background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,45,123,.15);border-radius:10px;color:var(--np);font-size:11px;font-weight:500;cursor:pointer;margin-top:4px;margin-bottom:10px}
+.ebtn{width:100%;padding:10px;background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(0,255,242,.1);border-radius:10px;color:var(--cy);font-size:11px;cursor:pointer;margin-bottom:5px;opacity:.6}
+.streak-b{display:inline-flex;align-items:center;gap:3px;background:rgba(240,255,0,.08);border:1px solid rgba(240,255,0,.2);border-radius:7px;padding:3px 8px;font-size:10px;font-weight:700;color:var(--ny);text-shadow:0 0 6px rgba(240,255,0,.3)}
+/* overlay */
+.ov{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(6,6,14,.92);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center}
+/* animations */
+.anim-char{font-size:64px;animation:bounce 0.6s ease infinite alternate;filter:drop-shadow(0 0 30px rgba(0,255,242,.5))}
+@keyframes bounce{0%{transform:translateY(0) scale(1)}100%{transform:translateY(-20px) scale(1.1)}}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes slideIn{0%{transform:translateX(-100vw)}50%{transform:translateX(10px)}100%{transform:translateX(0)}}
+@keyframes disco{0%{transform:rotate(-10deg) scale(1)}25%{transform:rotate(10deg) scale(1.1)}50%{transform:rotate(-10deg) scale(1)}75%{transform:rotate(10deg) scale(1.1)}100%{transform:rotate(-10deg) scale(1)}}
+@keyframes drop{0%{transform:translateY(-100vh) rotate(0)}60%{transform:translateY(0) rotate(360deg)}80%{transform:translateY(-30px)}100%{transform:translateY(0)}}
+@keyframes fireSpin{0%{transform:rotate(0) scale(.5);opacity:0}50%{transform:rotate(180deg) scale(1.3);opacity:1}100%{transform:rotate(360deg) scale(1);opacity:1}}
+@keyframes flyBy{0%{transform:translateX(-100vw) translateY(0)}50%{transform:translateX(0) translateY(-30px)}100%{transform:translateX(100vw) translateY(0)}}
+.anim-msg{font-size:22px;font-weight:800;margin-top:12px;background:linear-gradient(90deg,var(--cy),var(--mg),var(--ny));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sparkle{position:absolute;font-size:20px;animation:sparkle 1s ease-out forwards}
+@keyframes sparkle{0%{opacity:1;transform:scale(0)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(0) translateY(-40px)}}
+.game-canvas{border-radius:12px;background:rgba(0,0,0,.4);touch-action:none}
+.game-hud{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700}
+.game-lives{color:var(--np)}.game-score{color:var(--cy)}
+.game-over-msg{font-size:13px;color:#778;text-align:center;margin-top:12px;font-style:italic;line-height:1.6}
+.game-btn{background:linear-gradient(135deg,var(--cy),var(--eb));border:none;border-radius:12px;padding:14px 32px;color:#000;font-size:16px;font-weight:800;cursor:pointer;margin-top:16px;box-shadow:0 0 25px rgba(0,255,242,.3)}
+.game-btn:active{transform:scale(.95)}
+/* weekly report */
+.wr-box{text-align:center;padding:8px 0}
+.wr-grade{font-size:36px;font-weight:800}
+.wr-label{font-size:11px;color:#667;margin-top:2px}
 </style>
 </head>
 <body>
 <div id="toast" class="toast hide"></div>
 <div id="app"></div>
+<div id="overlay" class="ov" style="display:none"></div>
 <script>
-const CK="burn60_config",DK="burn60_data";
-const DINNER_CATS=[
-{icon:"🍲",name:"찌개류",note:"밥 반 공기",items:["순두부찌개","된장찌개","김치찌개","매운탕/생선찌개"]},
-{icon:"🫕",name:"찜/조림류",note:"밥 반 공기 or 없이",items:["야채찜","아구찜","해물찜","코다리찜","갈치조림","닭볶음탕"]},
-{icon:"🥗",name:"샐러드/포케류",note:"",items:["닭가슴살 샐러드","연어 샐러드","포케 볼(밥 적게)","곡물 샐러드","두부 샐러드"]},
-{icon:"🥩",name:"구이류",note:"쌈채소 세트, 밥 없이",items:["삼겹살","목살구이","훈제오리+채소","닭가슴살 스테이크","고등어구이","삼치구이","보쌈(고기+쌈채소)"]},
-{icon:"🍜",name:"탕/국밥류",note:"밥 반 공기",items:["감자탕(뼈 위주)","삼계탕(반마리)","모듬국밥"]},
-{icon:"🍚",name:"한식 정식류",note:"밥 반 공기",items:["쌈밥 정식","비빔밥","회덮밥","제육볶음 정식","불고기 정식"]}
+const L={
+zh:{quest:"任务",weight:"体重",history:"历史",stats:"统计",start:"🚀 开始挑战",curW:"当前体重",goalW:"目标体重",height:"身高",days:"挑战天数",day:"天",left:"剩余",done:"完成",streak:"连续打卡",progress:"进度",week:"第%s周",plan:"本周计划",sets:"组",rest:"今天是休息日",restSub:"周日完全休息\n饮食自由 · 运动自由\n好好休息，明天继续 💪",water:"喝水",water_d:"250ml",weigh:"称体重",weigh_d:"空腹记录",exercise:"楼梯运动",ex_d:"5层×%s组 + 墙壁俯卧撑15次×%s组",breakfast:"早餐",lunch:"午餐",lunch_d:"黄瓜1根 + 煮鸡蛋1个",dinner:"晚餐",dinner_d:"从下方分类选择",fasting:"禁食确认",fasting_d:"20点后只喝水/茶",dinnerTitle:"🍽️ 晚餐菜单",rec:"记录体重",recTip:"建议每天早上空腹称重",save:"保存",saved:"已记录: %skg ✓",trend:"趋势",noData:"暂无数据",histTitle:"历史记录",today:"今天",info:"挑战信息",startD:"开始",endD:"结束",reset:"🗑 清除所有数据",end:"🔄 结束挑战",reduced:"已减",current:"当前",toGoal:"距目标",recCnt:"记录次数",elapsed:"已过天数",cal:"月历",badges:"成就",level:"等级",xp:"经验",wkReport:"本周报告",wkRate:"周完成率",avgRate:"总平均",stars:"完美天数",gameUnlock:"🎮 游戏已解锁！",playGame:"开始游戏",score:"得分",lives:"生命",gameOver:"游戏结束",bmi:"BMI",predict:"预计达标",wkLoss:"周均减重",dataHint:"数据保存在浏览器中",egg:"煮鸡蛋2个",fruit:["橙子","苹果","香蕉"],nextBdg:"下个成就"},
+ko:{quest:"퀘스트",weight:"체중",history:"기록",stats:"통계",start:"🚀 시작",curW:"현재 체중",goalW:"목표 체중",height:"키",days:"도전 일수",day:"일",left:"남은 일수",done:"완료",streak:"연속 달성",progress:"진행률",week:"제%s주",plan:"이번 주",sets:"세트",rest:"오늘은 휴식일",restSub:"일요일 완전 휴식\n식단 자유 · 운동 자유\n푹 쉬고 내일 다시 💪",water:"물 마시기",water_d:"250ml",weigh:"체중 측정",weigh_d:"공복 기록",exercise:"계단 운동",ex_d:"5층×%s세트 + 벽 푸시업 15회×%s세트",breakfast:"아침",lunch:"점심",lunch_d:"오이 1개 + 삶은 계란 1개",dinner:"저녁",dinner_d:"아래에서 선택",fasting:"금식 확인",fasting_d:"20시 이후 물/차만",dinnerTitle:"🍽️ 저녁 메뉴",rec:"체중 기록",recTip:"매일 아침 공복 측정",save:"저장",saved:"기록: %skg ✓",trend:"추세",noData:"데이터 없음",histTitle:"기록",today:"오늘",info:"도전 정보",startD:"시작",endD:"종료",reset:"🗑 전체 삭제",end:"🔄 종료 & 재시작",reduced:"감량",current:"현재",toGoal:"목표까지",recCnt:"기록 횟수",elapsed:"경과 일수",cal:"달력",badges:"업적",level:"레벨",xp:"경험치",wkReport:"주간 리포트",wkRate:"주간 완료율",avgRate:"전체 평균",stars:"퍼펙트",gameUnlock:"🎮 게임 해금!",playGame:"게임 시작",score:"점수",lives:"목숨",gameOver:"게임 오버",bmi:"BMI",predict:"예상 달성일",wkLoss:"주간 감량",dataHint:"브라우저에 저장",egg:"삶은 계란 2개",fruit:["오렌지","사과","바나나"],nextBdg:"다음 업적"}
+};
+let lang=localStorage.getItem("b60lang")||"zh";
+function t(k){return L[lang][k]||L.zh[k]||k}
+function setLang(l){lang=l;localStorage.setItem("b60lang",l);render()}
+const CK="burn60_config",DK="burn60_data",UK="burn60_user";
+const DCATS=[
+{icon:"🍲",n:"찌개류/锅类",note:"半碗饭",items:["순두부찌개/嫩豆腐锅","된장찌개/大酱汤","김치찌개/泡菜锅","매운탕/辣鱼汤"]},
+{icon:"🫕",n:"찜·조림/蒸炖",note:"少饭或无饭",items:["야채찜/蔬菜蒸","아구찜/安康鱼蒸","해물찜/海鲜蒸","코다리찜/明太鱼蒸","갈치조림/带鱼炖","닭볶음탕/鸡炖汤"]},
+{icon:"🥗",n:"샐러드/沙拉",items:["닭가슴살/鸡胸沙拉","연어/三文鱼沙拉","포케 볼/Poke Bowl","곡물/谷物沙拉","두부/豆腐沙拉"]},
+{icon:"🥩",n:"구이/烤肉",note:"生菜包·无饭",items:["삼겹살/五花肉","목살/梅花肉","훈제오리/熏鸭","닭가슴살/鸡胸","고등어/鲭鱼","삼치/鲅鱼","보쌈/水煮肉"]},
+{icon:"🍜",n:"탕·국밥/汤饭",note:"半碗饭",items:["감자탕/脊骨汤","삼계탕/参鸡汤(半)","모듬국밥/什锦汤饭"]},
+{icon:"🍚",n:"한식정식/套餐",note:"半碗饭",items:["쌈밥/包饭","비빔밥/拌饭","회덮밥/刺身饭","제육/辣炒猪肉","불고기/烤肉"]}
 ];
-const FRUITS=["오렌지","사과","바나나"];
-const QUESTS=[
-{id:"water1",time:"07:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"morning"},
-{id:"weight",time:"07:00",emoji:"⚖️",title:"체중 측정",desc:"공복 상태로 기록",cat:"morning"},
-{id:"exercise",time:"07:10",emoji:"🏃",title:"계단 운동",desc:"5층 올라가기 + 벽 푸시업 15회 × 세트",cat:"exercise"},
-{id:"breakfast",time:"08:00",emoji:"🍳",title:"아침 식사",desc:"",cat:"meal"},
-{id:"water2",time:"10:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
-{id:"water3",time:"12:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
-{id:"lunch",time:"14:00",emoji:"🥒",title:"점심",desc:"오이 1개 + 삶은 계란 1개",cat:"meal"},
-{id:"water4",time:"16:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
-{id:"dinner",time:"18:00",emoji:"🍲",title:"저녁 식사",desc:"아래 카테고리에서 선택",cat:"meal"},
-{id:"water5",time:"19:00",emoji:"💧",title:"물 마시기",desc:"200~300ml",cat:"water"},
-{id:"fasting",time:"20:00",emoji:"🚫",title:"금식 모드",desc:"물/차만 허용",cat:"night"}
+const LVLS=[0,100,250,500,800,1200,1700,2300,3000,4000];
+const LN_ZH=["新手","学徒","战士","精英","勇者","英雄","大师","传奇","神话","不朽"];
+const LN_KO=["초보","수련생","전사","정예","용사","영웅","마스터","전설","신화","불멸"];
+function _exDays(){let c=0;Object.values(data).forEach(v=>{if(v.quests&&v.quests.ex)c++});return c}
+function _gmCnt(){let c=0;Object.values(data).forEach(v=>{if(v.gamePlayed)c++});return c}
+function _wLost(){return cfg?(cfg.startWeight-latestW()):0}
+function _goalOk(){return cfg&&latestW()<=cfg.targetWeight}
+function _bmiOk(){if(!cfg||!cfg.height)return false;const h=cfg.height/100;const b=latestW()/(h*h);return b>=18.5&&b<25}
+function _firstFC(){return cfg&&data[cfg.startDate]&&data[cfg.startDate].quests&&Object.values(data[cfg.startDate].quests).filter(Boolean).length===QT}
+function _wkS(){return weeklyRate()>=80}
+function _wRecCnt(){return Object.values(data).filter(v=>v.weight).length}
+const BDEFS=[
+// ═══ 🔥 연속 달성 (Streak) ═══
+{id:"s7",icon:"🔥",zh:"七日不屈",ko:"7일 불굴",ck:()=>getStreak()>=7,cz:"连续7天",ck2:"7일 연속"},
+{id:"s14",icon:"🏅",zh:"钢铁意志",ko:"강철 의지",ck:()=>getStreak()>=14,cz:"连续14天",ck2:"14일 연속"},
+{id:"s30",icon:"🎖️",zh:"月度战神",ko:"월간 전신",ck:()=>getStreak()>=30,cz:"连续30天",ck2:"30일 연속"},
+{id:"s60",icon:"👑",zh:"不可阻挡",ko:"멈출 수 없다",ck:()=>getStreak()>=60,cz:"连续60天",ck2:"60일 연속"},
+{id:"s90",icon:"💫",zh:"钢铁之躯",ko:"강철 육체",ck:()=>getStreak()>=90,cz:"连续90天",ck2:"90일 연속"},
+{id:"s120",icon:"🌠",zh:"超越极限",ko:"한계 돌파",ck:()=>getStreak()>=120,cz:"连续120天",ck2:"120일 연속"},
+{id:"s150",icon:"☄️",zh:"接近神话",ko:"신화에 근접",ck:()=>getStreak()>=150,cz:"连续150天",ck2:"150일 연속"},
+{id:"s180",icon:"🏛️",zh:"不朽传说",ko:"불멸의 전설",ck:()=>getStreak()>=180,cz:"连续180天",ck2:"180일 연속"},
+// ═══ ⭐ 퍼펙트 데이 (Full Clear) ═══
+{id:"fc1",icon:"⭐",zh:"完美一天",ko:"퍼펙트 데이",ck:()=>totalStars()>=1,cz:"1次全完成",ck2:"풀클리어 1회"},
+{id:"fc10",icon:"🌟",zh:"完美主义",ko:"완벽주의자",ck:()=>totalStars()>=10,cz:"10次",ck2:"10회"},
+{id:"fc30",icon:"💎",zh:"钻石纪律",ko:"다이아몬드",ck:()=>totalStars()>=30,cz:"30次",ck2:"30회"},
+{id:"fc50",icon:"🔮",zh:"传奇毅力",ko:"전설의 의지",ck:()=>totalStars()>=50,cz:"50次",ck2:"50회"},
+{id:"fc75",icon:"🪐",zh:"钢铁纪律",ko:"강철 규율",ck:()=>totalStars()>=75,cz:"75次",ck2:"75회"},
+{id:"fc100",icon:"🌌",zh:"百日无双",ko:"백일무쌍",ck:()=>totalStars()>=100,cz:"100次",ck2:"100회"},
+{id:"fc130",icon:"👁️",zh:"至高完美",ko:"지고의 완벽",ck:()=>totalStars()>=130,cz:"130次",ck2:"130회"},
+// ═══ ⚖️ 감량 (Weight Loss) ═══
+{id:"w1",icon:"🌱",zh:"第一步",ko:"첫 걸음",ck:()=>_wLost()>=1,cz:"-1kg",ck2:"-1kg"},
+{id:"w3",icon:"🔥",zh:"初见成效",ko:"효과 시작",ck:()=>_wLost()>=3,cz:"-3kg",ck2:"-3kg"},
+{id:"w5",icon:"⚔️",zh:"5kg斩",ko:"5kg 슬레이어",ck:()=>_wLost()>=5,cz:"-5kg",ck2:"-5kg"},
+{id:"w8",icon:"🦋",zh:"蜕变中",ko:"변신 중",ck:()=>_wLost()>=8,cz:"-8kg",ck2:"-8kg"},
+{id:"w10",icon:"🐉",zh:"浴火重生",ko:"환골탈태",ck:()=>_wLost()>=10,cz:"-10kg",ck2:"-10kg"},
+{id:"w15",icon:"🌈",zh:"涅槃",ko:"열반",ck:()=>_wLost()>=15,cz:"-15kg",ck2:"-15kg"},
+{id:"w20",icon:"🦅",zh:"脱胎换骨",ko:"탈태환골",ck:()=>_wLost()>=20,cz:"-20kg",ck2:"-20kg"},
+{id:"w25",icon:"🏔️",zh:"传说之体",ko:"전설의 몸",ck:()=>_wLost()>=25,cz:"-25kg",ck2:"-25kg"},
+// ═══ 💪 운동 (Exercise) ═══
+{id:"ex1",icon:"👟",zh:"迈出第一步",ko:"첫 운동",ck:()=>_exDays()>=1,cz:"首次运动",ck2:"첫 운동 완료"},
+{id:"ex30",icon:"💪",zh:"运动达人",ko:"운동 달인",ck:()=>_exDays()>=30,cz:"运动30天",ck2:"운동 30일"},
+{id:"ex60",icon:"🏋️",zh:"运动狂人",ko:"운동 광인",ck:()=>_exDays()>=60,cz:"运动60天",ck2:"운동 60일"},
+{id:"ex100",icon:"⚡",zh:"运动之神",ko:"운동의 신",ck:()=>_exDays()>=100,cz:"运动100天",ck2:"운동 100일"},
+// ═══ 🎮 게임 (Game) ═══
+{id:"g10",icon:"🎮",zh:"游戏新手",ko:"게임 뉴비",ck:()=>_gmCnt()>=10,cz:"玩10次",ck2:"10회 플레이"},
+{id:"g30",icon:"🕹️",zh:"游戏高手",ko:"게임 고수",ck:()=>_gmCnt()>=30,cz:"玩30次",ck2:"30회 플레이"},
+{id:"g50",icon:"👾",zh:"游戏之王",ko:"게임 킹",ck:()=>_gmCnt()>=50,cz:"玩50次",ck2:"50회 플레이"},
+// ═══ 🏆 특별 (Special) ═══
+{id:"sp1",icon:"🎯",zh:"开门红",ko:"첫날 퍼펙트",ck:()=>_firstFC(),cz:"首日全完成",ck2:"첫날 풀클리어"},
+{id:"sp2",icon:"📊",zh:"周冠军",ko:"주간 챔피언",ck:()=>_wkS(),cz:"周完成率≥80%",ck2:"주간 80% 이상"},
+{id:"sp3",icon:"🎯",zh:"使命完成",ko:"미션 컴플릿",ck:()=>_goalOk(),cz:"达到目标体重",ck2:"목표 체중 달성"},
+{id:"sp4",icon:"💚",zh:"健康达标",ko:"건강 달성",ck:()=>_bmiOk(),cz:"BMI正常范围",ck2:"BMI 정상 범위"},
+{id:"sp5",icon:"📝",zh:"记录狂人",ko:"기록 광인",ck:()=>_wRecCnt()>=60,cz:"记录体重60次",ck2:"체중 60회 기록"}
 ];
-// helpers
+const ANIMS=[
+{emoji:"💪",style:"animation:bounce .5s ease infinite alternate",mz:"完美！",mk:"퍼펙트!"},
+{emoji:"😎",style:"animation:slideIn .8s ease forwards",mz:"太强了！",mk:"쩐다!"},
+{emoji:"🕺",style:"animation:disco .6s ease infinite",mz:"无人能挡！",mk:"못 말려!"},
+{emoji:"🏆",style:"animation:drop 1s ease forwards",mz:"冠军！",mk:"챔피언!"},
+{emoji:"🔥",style:"animation:fireSpin 1s ease forwards",mz:"燃烧吧！",mk:"불태워!"},
+{emoji:"🐉",style:"animation:flyBy 2s ease forwards",mz:"龙的传人！",mk:"용의 후예!"}
+];
+const RZ=["手残就别玩了，赶紧睡吧 😴","游戏菜没关系，减肥别菜就行 🫠","三条命都没了？明天运动加一组 💀","就这？就这？快去睡觉 🥱","游戏输了没事，体重秤上赢就行 😏","别不服，明天全部完成再来 👋"];
+const RK=["게임 실력이 이래서야… 자라 😴","게임은 못해도 다이어트는 잘하자 🫠","목숨 3개 날려? 내일 운동 추가 💀","이게 최선? 어서 자라 🥱","게임 져도 체중계에서 이기면 돼 😏","불복? 내일 다 깨고 다시 와 👋"];
 function td(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function dBtw(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/864e5)}
-function fmtD(s){const d=new Date(s+"T00:00:00");return`${d.getMonth()+1}月${d.getDate()}日`}
+function fmtD(s){const d=new Date(s+"T00:00:00");return`${d.getMonth()+1}/${d.getDate()}`}
 function addD(s,n){const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function dow(s){return new Date(s+"T00:00:00").getDay()}
-function isSunday(s){return dow(s)===0}
+function isSun(s){return dow(s)===0}
 function loadC(){try{return JSON.parse(localStorage.getItem(CK))}catch{return null}}
 function saveC(c){localStorage.setItem(CK,JSON.stringify(c))}
 function loadD(){try{return JSON.parse(localStorage.getItem(DK)||"{}")}catch{return{}}}
 function saveD(d){localStorage.setItem(DK,JSON.stringify(d))}
-let cfg=loadC(),data=loadD(),curView="quest",openCats={};
-function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.remove("hide");setTimeout(()=>t.classList.add("hide"),1800)}
-function sdf(date,f,v){if(!data[date])data[date]={};data[date][f]=v;saveD(data);toast("已保存 ✓");render()}
-function toggleQ(date,qid){const d=data[date]||{};const qs=d.quests||{};qs[qid]=!qs[qid];sdf(date,"quests",qs)}
-function getStreak(){if(!cfg)return 0;let s=0,d=new Date(td()+"T00:00:00");while(true){const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;if(ds<cfg.startDate)break;if(isSunday(ds)){d.setDate(d.getDate()-1);s++;continue}const e=data[ds];if(e&&e.quests){const done=Object.values(e.quests).filter(Boolean).length;if(done>=6){s++;d.setDate(d.getDate()-1)}else break}else break}return s}
+function loadU(){try{return JSON.parse(localStorage.getItem(UK)||'{"xp":0}')}catch{return{xp:0}}}
+function saveU(u){localStorage.setItem(UK,JSON.stringify(u))}
+let cfg=loadC(),data=loadD(),usr=loadU(),curView="quest",openCats={};
+function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.remove("hide");setTimeout(()=>el.classList.add("hide"),1800)}
+const QT=14;
+function getQuests(){const s=exSets();const fr=lang==="zh"?["橙子","苹果","香蕉"]:["오렌지","사과","바나나"];const fi=cfg?dBtw(cfg.startDate,td())%3:0;
+return[{id:"w1",time:"07:00",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"wt",time:"07:00",emoji:"⚖️",title:t("weigh"),desc:t("weigh_d")},{id:"w2",time:"08:30",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"ex",time:"07:10",emoji:"🏃",title:t("exercise"),desc:t("ex_d").replace(/%s/g,s)},{id:"bf",time:"08:00",emoji:"🍳",title:t("breakfast"),desc:t("egg")+" + "+fr[fi]},{id:"w3",time:"10:00",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"w4",time:"12:00",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"ln",time:"14:00",emoji:"🥒",title:t("lunch"),desc:t("lunch_d")},{id:"w5",time:"14:30",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"w6",time:"16:00",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"dn",time:"18:00",emoji:"🍲",title:t("dinner"),desc:t("dinner_d")},{id:"w7",time:"18:00",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"w8",time:"21:00",emoji:"💧",title:t("water"),desc:t("water_d")},{id:"fs",time:"23:00",emoji:"🌙",title:t("fasting"),desc:t("fasting_d")}]}
+function sdf(date,f,v){if(!data[date])data[date]={};data[date][f]=v;saveD(data);toast((lang==="zh"?"已保存":"저장")+" ✓");render()}
+function toggleQ(date,qid){const d=data[date]||{};const qs=d.quests||{};const was=qsDone(date)===QT;qs[qid]=!qs[qid];if(!data[date])data[date]={};data[date].quests=qs;if(qs[qid]){usr.xp+=10;if(qsDone(date)===QT&&!was)usr.xp+=50;saveU(usr)}else{usr.xp=Math.max(0,usr.xp-10);saveU(usr)}saveD(data);if(qsDone(date)===QT&&!was){showAnim();return}render()}
+function qsDone(d){const e=data[d]||{};return e.quests?Object.values(e.quests).filter(Boolean).length:0}
+function getStreak(){if(!cfg)return 0;let s=0,d=new Date(td()+"T00:00:00");while(true){const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;if(ds<cfg.startDate)break;if(isSun(ds)){s++;d.setDate(d.getDate()-1);continue}if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7){s++;d.setDate(d.getDate()-1)}else break}return s}
 function latestW(){const e=Object.entries(data).filter(([,v])=>v.weight).sort((a,b)=>b[0].localeCompare(a[0]));return e.length>0?e[0][1].weight:cfg?cfg.startWeight:0}
-function questsDone(date){const d=data[date]||{};const qs=d.quests||{};return QUESTS.filter(q=>qs[q.id]).length}
-function weekNum(date){if(!cfg)return 1;return Math.min(8,Math.floor(dBtw(cfg.startDate,date)/7)+1)}
-function exSets(date){const w=weekNum(date);if(w<=1)return 7;if(w<=2)return 8;if(w<=4)return 10;return 12}
-// chart
-function buildChart(){if(!cfg)return"";const T=cfg.totalDays,sW=cfg.startWeight,tW=cfg.targetWeight;const entries=Object.entries(data).filter(([,v])=>v.weight).map(([k,v])=>({day:dBtw(cfg.startDate,k),w:v.weight})).filter(e=>e.day>=0).sort((a,b)=>a.day-b.day);if(!entries.length)return'<div class="empty-chart">暂无体重数据 📊</div>';const W=340,H=170,P=38,ws=entries.map(e=>e.w),mn=Math.min(...ws,tW)-1,mx=Math.max(...ws,sW)+1,xS=d=>P+(d/T)*(W-P*2),yS=w=>P+((mx-w)/(mx-mn))*(H-P*2);let s=`<svg viewBox="0 0 ${W} ${H}" class="chart-svg"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e09e" stop-opacity="0.3"/><stop offset="100%" stop-color="#00e09e" stop-opacity="0.02"/></linearGradient></defs>`;for(let w=Math.ceil(mn);w<=Math.floor(mx);w+=2)s+=`<line x1="${P}" y1="${yS(w)}" x2="${W-P}" y2="${yS(w)}" stroke="#333" stroke-width="0.5"/><text x="${P-4}" y="${yS(w)+3}" text-anchor="end" fill="#888" font-size="9" font-family="monospace">${w}</text>`;const tY=yS(tW);s+=`<line x1="${P}" y1="${tY}" x2="${W-P}" y2="${tY}" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4 3"/><text x="${W-P+2}" y="${tY+3}" fill="#ff6b6b" font-size="8" font-family="monospace">目标${tW}</text>`;if(entries.length>1){const pts=entries.map(e=>`${xS(e.day)},${yS(e.w)}`).join(" ");s+=`<polygon points="${xS(entries[0].day)},${H-P} ${pts} ${xS(entries[entries.length-1].day)},${H-P}" fill="url(#ag)"/><polyline points="${pts}" fill="none" stroke="#00e09e" stroke-width="2" stroke-linejoin="round"/>`}entries.forEach(e=>{s+=`<circle cx="${xS(e.day)}" cy="${yS(e.w)}" r="3.5" fill="#0a0a0a" stroke="#00e09e" stroke-width="2"/><text x="${xS(e.day)}" y="${yS(e.w)-7}" text-anchor="middle" fill="#ddd" font-size="8" font-weight="600" font-family="monospace">${e.w}</text>`});s+=`<text x="${P}" y="${H-6}" fill="#666" font-size="8" font-family="monospace">${fmtD(cfg.startDate)}</text><text x="${W-P}" y="${H-6}" text-anchor="end" fill="#666" font-size="8" font-family="monospace">${fmtD(cfg.endDate)}</text></svg>`;return s}
-// ring svg
-function ringSvg(pct){const r=30,c=2*Math.PI*r,dash=c*pct/100,gap=c-dash;const color=pct>=80?"var(--green)":pct>=50?"var(--yellow)":"var(--red)";return`<svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="#1a1a1a" stroke-width="6"/><circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-dasharray="${dash} ${gap}" stroke-linecap="round" transform="rotate(-90 36 36)" style="transition:stroke-dasharray .5s"/></svg>`}
-// render
-function render(){const app=document.getElementById("app");if(!cfg){app.innerHTML=`<div class="setup"><div class="setup-logo">🔥</div><div class="setup-title">燃脂挑战</div><div class="setup-sub">设置目标，开始挑战</div><div class="setup-field"><label class="setup-label">当前体重</label><input class="setup-input" type="number" step="0.1" id="s-start" placeholder="例: 81.0"><div class="setup-unit">kg</div></div><div class="setup-row"><div class="setup-field"><label class="setup-label">目标体重</label><input class="setup-input" type="number" step="0.1" id="s-target" placeholder="例: 70.0"><div class="setup-unit">kg</div></div><div class="setup-field"><label class="setup-label">挑战天数</label><input class="setup-input" type="number" id="s-days" placeholder="例: 60" value="60"><div class="setup-unit">天</div></div></div><button class="start-btn" onclick="startC()">🚀 开始挑战</button><div class="setup-hint">数据保存在浏览器中<br>同一浏览器访问即可保留记录</div></div>`;return}
-const t=td(),tD=data[t]||{},el=Math.max(0,dBtw(cfg.startDate,t)),left=Math.max(0,dBtw(t,cfg.endDate)),pct=Math.min(100,Math.round(el/cfg.totalDays*100)),lw=latestW(),lost=cfg.startWeight-lw,toGo=lw-cfg.targetWeight,streak=getStreak(),sun=isSunday(t),qDone=questsDone(t),qTotal=QUESTS.length,qPct=sun?100:Math.round(qDone/qTotal*100);
-const dayLabel=`D${el+1}`;const wk=weekNum(t);const sets=exSets(t);const fruitIdx=el%3;const todayFruit=FRUITS[fruitIdx];
-let nav=`<div class="bottom-nav">`;
-[["quest","⚔️","任务"],["weight","⚖️","体重"],["history","📅","历史"]].forEach(([k,ic,l])=>{nav+=`<button class="${curView===k?"active":""}" onclick="curView='${k}';render()"><span class="nav-icon">${ic}</span>${l}</button>`});
-nav+=`</div>`;
-let body="";
-// QUEST VIEW
+function totalStars(){return Object.entries(data).filter(([k,v])=>v.quests&&Object.values(v.quests).filter(Boolean).length===QT&&!isSun(k)).length}
+function exSets(){if(!cfg)return 7;const w=Math.floor(dBtw(cfg.startDate,td())/7)+1;if(w<=1)return 7;if(w<=2)return 8;if(w<=4)return 10;return 12}
+function getLvl(){let l=0;for(let i=LVLS.length-1;i>=0;i--)if(usr.xp>=LVLS[i]){l=i;break}return l}
+function getLN(l){return lang==="zh"?LN_ZH[l]:LN_KO[l]}
+function getBMI(){if(!cfg||!cfg.height)return 0;const h=cfg.height/100;return(latestW()/(h*h)).toFixed(1)}
+function getWeeklyLoss(){if(!cfg)return 0;const ws=Object.entries(data).filter(([,v])=>v.weight).sort((a,b)=>a[0].localeCompare(b[0]));if(ws.length<2)return 0;const first=ws[0],last=ws[ws.length-1],days=dBtw(first[0],last[0]);if(days<3)return 0;return((first[1].weight-last[1].weight)/days*7).toFixed(1)}
+function getPredictDate(){const rate=parseFloat(getWeeklyLoss());if(rate<=0||!cfg)return lang==="zh"?"--":"--";const toGo=latestW()-cfg.targetWeight;if(toGo<=0)return lang==="zh"?"已达标！":"달성!";const weeks=toGo/rate;const days=Math.ceil(weeks*7);return fmtD(addD(td(),days))}
+function weeklyRate(){if(!cfg)return 0;const wd=dow(td()),start=addD(td(),-wd);let total=0,done=0;for(let i=0;i<7;i++){const ds=addD(start,i);if(ds>td()||ds<cfg.startDate)continue;if(isSun(ds))continue;total++;if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7)done++}return total?Math.round(done/total*100):0}
+function avgRate(){if(!cfg)return 0;const el=dBtw(cfg.startDate,td());let total=0,done=0;for(let i=0;i<=el;i++){const ds=addD(cfg.startDate,i);if(isSun(ds))continue;total++;if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7)done++}return total?Math.round(done/total*100):0}
+function nextBadge(){for(const b of BDEFS)if(!b.ck())return lang==="zh"?`${b.icon} ${b.zh} — ${b.cz}`:`${b.icon} ${b.ko} — ${b.ck2}`;return lang==="zh"?"全部解锁！🎉":"전부 해금! 🎉"}
+function ringSvg(pct,sz){const r=sz/2-6,c=2*Math.PI*r,dash=c*pct/100,gap=c-dash;const col=pct>=80?"var(--cy)":pct>=50?"var(--ny)":"var(--np)";return`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="5"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-dasharray="${dash} ${gap}" stroke-linecap="round" transform="rotate(-90 ${sz/2} ${sz/2})" style="filter:drop-shadow(0 0 4px ${col})"/></svg>`}
+function buildChart(){if(!cfg)return"";const T=cfg.totalDays,sW=cfg.startWeight,tW=cfg.targetWeight;const entries=Object.entries(data).filter(([,v])=>v.weight).map(([k,v])=>({day:dBtw(cfg.startDate,k),w:v.weight})).filter(e=>e.day>=0).sort((a,b)=>a.day-b.day);if(!entries.length)return`<div class="ech">${t("noData")}</div>`;const W=340,H=155,P=34,ws=entries.map(e=>e.w),mn=Math.min(...ws,tW)-1,mx=Math.max(...ws,sW)+1,xS=d=>P+(d/T)*(W-P*2),yS=w=>P+((mx-w)/(mx-mn))*(H-P*2);let s=`<svg viewBox="0 0 ${W} ${H}" class="csv"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00fff2" stop-opacity="0.15"/><stop offset="100%" stop-color="#00fff2" stop-opacity="0.01"/></linearGradient></defs>`;for(let w=Math.ceil(mn);w<=Math.floor(mx);w+=2)s+=`<line x1="${P}" y1="${yS(w)}" x2="${W-P}" y2="${yS(w)}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/><text x="${P-3}" y="${yS(w)+3}" text-anchor="end" fill="#556" font-size="7" font-family="monospace">${w}</text>`;s+=`<line x1="${P}" y1="${yS(tW)}" x2="${W-P}" y2="${yS(tW)}" stroke="var(--np)" stroke-width="1" stroke-dasharray="4 3" style="filter:drop-shadow(0 0 3px rgba(255,45,123,.3))"/><text x="${W-P+2}" y="${yS(tW)+3}" fill="var(--np)" font-size="7" font-family="monospace">${tW}</text>`;if(entries.length>1){const pts=entries.map(e=>`${xS(e.day)},${yS(e.w)}`).join(" ");s+=`<polygon points="${xS(entries[0].day)},${H-P} ${pts} ${xS(entries[entries.length-1].day)},${H-P}" fill="url(#ag)"/><polyline points="${pts}" fill="none" stroke="var(--cy)" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(0,255,242,.4))"/>`}entries.forEach(e=>{s+=`<circle cx="${xS(e.day)}" cy="${yS(e.w)}" r="3" fill="var(--bg)" stroke="var(--cy)" stroke-width="1.5"/><text x="${xS(e.day)}" y="${yS(e.w)-6}" text-anchor="middle" fill="#ccd" font-size="7" font-weight="600" font-family="monospace">${e.w}</text>`});s+=`<text x="${P}" y="${H-3}" fill="#445" font-size="7" font-family="monospace">${fmtD(cfg.startDate)}</text><text x="${W-P}" y="${H-3}" text-anchor="end" fill="#445" font-size="7" font-family="monospace">${fmtD(cfg.endDate)}</text></svg>`;return s}
+function buildCal(){if(!cfg)return"";const el=dBtw(cfg.startDate,td());const hd=lang==="zh"?["日","一","二","三","四","五","六"]:["일","월","화","수","목","금","토"];let h=`<div class="cal">${hd.map(d=>`<div class="cal-h">${d}</div>`).join("")}`;const sD=new Date(cfg.startDate+"T00:00:00"),mS=new Date(sD.getFullYear(),sD.getMonth(),1),sDow=mS.getDay();for(let i=0;i<sDow;i++)h+=`<div class="cal-d"></div>`;for(let i=0;i<=Math.min(el+14,cfg.totalDays+14);i++){const ds=addD(`${mS.getFullYear()}-${String(mS.getMonth()+1).padStart(2,"0")}-01`,i+mS.getDate()-1);const dm=new Date(ds+"T00:00:00");const dn=dm.getDate();if(ds>addD(td(),14))continue;if(ds<cfg.startDate){h+=`<div class="cal-d c4">${dn}</div>`;continue}if(ds>td()){h+=`<div class="cal-d c4">${dn}</div>`;continue}if(isSun(ds)){h+=`<div class="cal-d cs">${dn}</div>`;continue}const qd=data[ds]&&data[ds].quests?Object.values(data[ds].quests).filter(Boolean).length:0;const p=Math.round(qd/QT*100);h+=`<div class="cal-d ${p>=80?"c1":p>=50?"c2":p>0?"c3":"c4"}">${dn}</div>`}h+=`</div>`;return h}
+// ═══ animations & games (same logic, compact) ═══
+function showAnim(){const ov=document.getElementById("overlay");const a=ANIMS[Math.floor(Math.random()*ANIMS.length)];const msg=lang==="zh"?a.mz:a.mk;let sp="";for(let i=0;i<10;i++)sp+=`<div class="sparkle" style="left:${Math.random()*280-40}px;top:${Math.random()*180-40}px;animation-delay:${Math.random()*.5}s">✨</div>`;ov.style.display="flex";ov.innerHTML=`<div style="position:relative;text-align:center">${sp}<div class="anim-char" style="${a.style}">${a.emoji}</div><div class="anim-msg">${msg}</div><div style="margin-top:6px;font-size:11px;color:var(--ny)">+50 XP ⭐</div><button class="game-btn" style="margin-top:16px" onclick="showGameIntro()">${t("playGame")} 🎮</button><button style="background:none;border:none;color:#556;font-size:11px;margin-top:10px;cursor:pointer" onclick="closeOv()">${lang==="zh"?"跳过":"건너뛰기"}</button></div>`;setTimeout(()=>render(),100)}
+function closeOv(){document.getElementById("overlay").style.display="none";render()}
+let gameActive=false,gameLives=0,gameScore=0,gameId=0,gameLoop=null,gameData={};
+const GN_Z=["消灭脂肪","楼梯跑酷","打地鼠","接水滴","躲避炸弹","食物配对"],GN_K=["지방 터트리기","계단 러너","두더지 잡기","물방울 받기","폭탄 피하기","음식 매칭"];
+function showGameIntro(){const tD=data[td()]||{};if(tD.gamePlayed){closeOv();toast(lang==="zh"?"今天已玩过":"오늘 이미 플레이함");return}gameId=Math.floor(Math.random()*6);const nm=lang==="zh"?GN_Z[gameId]:GN_K[gameId];const ov=document.getElementById("overlay");ov.innerHTML=`<div style="text-align:center"><div style="font-size:48px;margin-bottom:12px;filter:drop-shadow(0 0 20px rgba(0,255,242,.4))">🎮</div><div style="font-size:20px;font-weight:800;color:var(--cy);text-shadow:0 0 15px rgba(0,255,242,.4)">${nm}</div><div style="font-size:12px;color:#778;margin-top:8px">${t("lives")}: ❤️❤️❤️</div><button class="game-btn" onclick="startGame()">${t("playGame")}</button></div>`}
+function startGame(){gameLives=3;gameScore=0;gameActive=true;gameData={};const ov=document.getElementById("overlay");ov.innerHTML=`<div style="width:100%;max-width:380px;padding:0 16px"><div class="game-hud"><span class="game-lives" id="g-lives">❤️❤️❤️</span><span style="color:#fff;font-size:11px" id="g-name">${lang==="zh"?GN_Z[gameId]:GN_K[gameId]}</span><span class="game-score" id="g-score">${t("score")}: 0</span></div><canvas id="gc" class="game-canvas" width="350" height="450"></canvas></div>`;const c=document.getElementById("gc");c.addEventListener("touchstart",gTouch,{passive:false});c.addEventListener("click",gClick);[initFB,initSR,initWM,initWC,initDG,initMT][gameId](c)}
+function updHud(){document.getElementById("g-lives").textContent="❤️".repeat(gameLives)+"🖤".repeat(3-gameLives);document.getElementById("g-score").textContent=t("score")+": "+gameScore}
+function loseLife(){gameLives--;updHud();if(gameLives<=0){gameActive=false;clearInterval(gameLoop);if(!data[td()])data[td()]={};data[td()].gamePlayed=true;saveD(data);setTimeout(showGO,500)}}
+function showGO(){const rs=lang==="zh"?RZ:RK;const ov=document.getElementById("overlay");ov.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:48px">💀</div><div style="font-size:18px;font-weight:800;color:var(--np);text-shadow:0 0 10px rgba(255,45,123,.4);margin-top:8px">${t("gameOver")}</div><div style="font-size:14px;color:var(--cy);margin-top:6px">${t("score")}: ${gameScore}</div><div class="game-over-msg">${rs[Math.floor(Math.random()*rs.length)]}</div><button class="game-btn" style="background:var(--glass);color:var(--txt);border:1px solid var(--gborder);margin-top:16px;box-shadow:none" onclick="closeOv()">${lang==="zh"?"关闭":"닫기"}</button></div>`}
+function gTouch(e){e.preventDefault();const r=e.target.getBoundingClientRect();gIn(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top)}
+function gClick(e){const r=e.target.getBoundingClientRect();gIn(e.clientX-r.left,e.clientY-r.top)}
+function gIn(x,y){if(!gameActive)return;[fbTap,srJump,wmTap,wcMv,dgMv,mtTap][gameId](x,y)}
+function initFB(c){const ctx=c.getContext("2d");gameData={items:[],st:0,spd:2};gameLoop=setInterval(()=>{if(!gameActive)return;const g=gameData;g.st++;if(g.st%30===0){const j=Math.random()>.25;g.items.push({x:Math.random()*310+20,y:-30,e:j?["🍗","🍕","🍔","🍟","🍩"][Math.floor(Math.random()*5)]:"🥗",j,s:36})}g.items.forEach(i=>i.y+=g.spd);const m=g.items.filter(i=>i.y>460&&i.j);if(m.length)loseLife();g.items=g.items.filter(i=>i.y<=460);if(g.st%200===0)g.spd+=.3;ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);g.items.forEach(i=>{ctx.font=`${i.s}px serif`;ctx.fillText(i.e,i.x-18,i.y)});updHud()},33)}
+function fbTap(x,y){const g=gameData;for(let i=g.items.length-1;i>=0;i--){const it=g.items[i];if(Math.abs(x-it.x)<30&&Math.abs(y-it.y)<30){if(it.j){gameScore+=10;g.items.splice(i,1)}else{loseLife();g.items.splice(i,1)}updHud();return}}}
+function initSR(c){const ctx=c.getContext("2d");gameData={py:350,vy:0,jp:false,obs:[],scr:0,spd:2,dist:0};gameLoop=setInterval(()=>{if(!gameActive)return;const g=gameData;g.scr+=g.spd;g.dist++;if(g.dist%150===0)g.spd+=.3;if(g.jp){g.vy+=.5;g.py+=g.vy;if(g.py>=350){g.py=350;g.jp=false;g.vy=0}}if(g.dist%60===0)g.obs.push({x:360,h:Math.random()*50+20});g.obs.forEach(o=>o.x-=g.spd);g.obs.forEach(o=>{if(o.x>40&&o.x<80&&g.py>350-o.h){loseLife();o.x=-100}});g.obs=g.obs.filter(o=>o.x>-40);ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);ctx.fillStyle="rgba(255,255,255,.03)";ctx.fillRect(0,380,350,70);g.obs.forEach(o=>{ctx.fillStyle="rgba(0,255,242,.15)";ctx.fillRect(o.x,380-o.h,25,o.h)});ctx.font="28px serif";ctx.fillText("🏃",50,g.py);gameScore=Math.floor(g.dist/10);updHud()},33)}
+function srJump(){if(!gameData.jp){gameData.jp=true;gameData.vy=-10}}
+function initWM(c){const ctx=c.getContext("2d");gameData={grid:Array(9).fill(null),tm:0,st:40};gameLoop=setInterval(()=>{if(!gameActive)return;const g=gameData;g.tm++;if(g.tm%g.st===0){const emp=g.grid.map((v,i)=>v===null?i:-1).filter(i=>i>=0);if(emp.length){g.grid[emp[Math.floor(Math.random()*emp.length)]]={e:["🍗","🍕","🍔","🍟","🍩"][Math.floor(Math.random()*5)],ttl:50}}if(g.tm%300===0&&g.st>20)g.st-=5}g.grid.forEach((v,i)=>{if(v){v.ttl--;if(v.ttl<=0){g.grid[i]=null;loseLife()}}});ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);for(let i=0;i<9;i++){const x=(i%3)*110+25,y=Math.floor(i/3)*130+30;ctx.fillStyle="rgba(255,255,255,.03)";ctx.beginPath();ctx.arc(x+45,y+45,42,0,Math.PI*2);ctx.fill();if(g.grid[i]){ctx.font="40px serif";ctx.fillText(g.grid[i].e,x+25,y+58)}}updHud()},33)}
+function wmTap(x,y){const g=gameData;for(let i=0;i<9;i++){const cx=(i%3)*110+70,cy=Math.floor(i/3)*130+75;if(Math.abs(x-cx)<42&&Math.abs(y-cy)<42&&g.grid[i]){g.grid[i]=null;gameScore+=15;updHud();return}}}
+function initWC(c){const ctx=c.getContext("2d");gameData={cx:175,drops:[],tm:0,spd:3};gameLoop=setInterval(()=>{if(!gameActive)return;const g=gameData;g.tm++;if(g.tm%25===0){const gd=Math.random()>.2;g.drops.push({x:Math.random()*310+20,y:-20,e:gd?"💧":"🍺",g:gd})}g.drops.forEach(d=>d.y+=g.spd);g.drops.forEach(d=>{if(d.y>400&&d.y<440&&Math.abs(d.x-g.cx)<35){if(d.g)gameScore+=10;else loseLife();d.y=999}});g.drops.filter(d=>d.y>450&&d.g).forEach(()=>loseLife());g.drops=g.drops.filter(d=>d.y<=460);if(g.tm%200===0)g.spd+=.3;ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);g.drops.forEach(d=>{ctx.font="26px serif";ctx.fillText(d.e,d.x-13,d.y)});ctx.font="34px serif";ctx.fillText("🥤",g.cx-17,430);updHud()},33)}
+function wcMv(x){gameData.cx=Math.max(20,Math.min(330,x))}
+function initDG(c){const ctx=c.getContext("2d");gameData={px:175,bombs:[],tm:0,spd:3};gameLoop=setInterval(()=>{if(!gameActive)return;const g=gameData;g.tm++;if(g.tm%20===0)g.bombs.push({x:Math.random()*310+20,y:-20});g.bombs.forEach(b=>b.y+=g.spd);g.bombs.forEach(b=>{if(b.y>380&&b.y<430&&Math.abs(b.x-g.px)<30){loseLife();b.y=999}});g.bombs=g.bombs.filter(b=>b.y<=460);if(g.tm%200===0)g.spd+=.3;gameScore=Math.floor(g.tm/10);ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);g.bombs.forEach(b=>{ctx.font="26px serif";ctx.fillText("💣",b.x-13,b.y)});ctx.font="30px serif";ctx.fillText("🏃",g.px-15,420);updHud()},33)}
+function dgMv(x){gameData.px=Math.max(20,Math.min(330,x))}
+function initMT(c){const ctx=c.getContext("2d");const em=["🥗","🥚","🥒","🍎","🐔","💧"];let cd=[...em,...em].sort(()=>Math.random()-.5);gameData={cards:cd.map(e=>({e,f:false,m:false})),f:null,s:null,lk:false,p:0};drMT(ctx)}
+function drMT(ctx){ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);gameData.cards.forEach((c,i)=>{const x=(i%4)*82+11,y=Math.floor(i/4)*82+20;if(c.m){ctx.fillStyle="rgba(0,255,242,.08)";ctx.fillRect(x,y,72,72);ctx.font="30px serif";ctx.fillText(c.e,x+21,y+50)}else if(c.f){ctx.fillStyle="rgba(191,0,255,.1)";ctx.fillRect(x,y,72,72);ctx.font="30px serif";ctx.fillText(c.e,x+21,y+50)}else{ctx.fillStyle="rgba(255,255,255,.04)";ctx.fillRect(x,y,72,72);ctx.font="22px serif";ctx.fillText("❓",x+25,y+47)}})}
+function mtTap(x,y){const g=gameData;if(g.lk)return;const i=Math.floor((x-11)/82)+Math.floor((y-20)/82)*4;if(i<0||i>=12)return;const c=g.cards[i];if(!c||c.f||c.m)return;c.f=true;const ctx=document.getElementById("gc").getContext("2d");drMT(ctx);if(g.f===null)g.f=i;else{g.s=i;g.lk=true;setTimeout(()=>{if(g.cards[g.f].e===g.cards[g.s].e){g.cards[g.f].m=true;g.cards[g.s].m=true;gameScore+=20;g.p++;if(g.p===6){gameActive=false;clearInterval(gameLoop);if(!data[td()])data[td()]={};data[td()].gamePlayed=true;saveD(data);document.getElementById("overlay").innerHTML=`<div style="text-align:center"><div style="font-size:48px;filter:drop-shadow(0 0 20px rgba(0,255,242,.5))">🎉</div><div style="font-size:18px;font-weight:800;color:var(--cy);margin-top:10px">${lang==="zh"?"配对成功！":"매칭 성공!"}</div><div style="font-size:14px;color:var(--ny);margin-top:6px">${t("score")}: ${gameScore}</div><button class="game-btn" style="margin-top:16px" onclick="closeOv()">${lang==="zh"?"关闭":"닫기"}</button></div>`;return}}else{g.cards[g.f].f=false;g.cards[g.s].f=false;loseLife()}g.f=null;g.s=null;g.lk=false;drMT(ctx);updHud()},600)}}
+// ═══ RENDER ═══
+function render(){const app=document.getElementById("app");
+if(!cfg){app.innerHTML=`<div class="setup"><div class="setup-logo">🔥</div><div class="setup-title">${lang==="zh"?"燃脂挑战":"번지 챌린지"}</div><div class="setup-sub">${lang==="zh"?"设置目标，开始挑战":"목표 설정, 도전 시작"}</div><div style="text-align:right;margin-bottom:10px"><button class="lang-btn" onclick="setLang(lang==='zh'?'ko':'zh')">${lang==="zh"?"한국어":"中文"}</button></div><div class="sf"><label class="sl">${t("curW")} (kg)</label><input class="si" type="number" step="0.1" id="s-sw" placeholder="81.0"></div><div class="sr"><div class="sf"><label class="sl">${t("goalW")} (kg)</label><input class="si" type="number" step="0.1" id="s-tw" placeholder="70.0"></div><div class="sf"><label class="sl">${t("height")} (cm)</label><input class="si" type="number" id="s-ht" placeholder="170"></div></div><div class="sf"><label class="sl">${t("days")} (max 180)</label><input class="si" type="number" id="s-d" placeholder="60" value="60"><div class="su">${t("day")}</div></div><button class="sbtn" onclick="startC()">${t("start")}</button><div class="shint">${t("dataHint")}</div></div>`;return}
+const today2=td(),tD=data[today2]||{},el=Math.max(0,dBtw(cfg.startDate,today2)),left=Math.max(0,dBtw(today2,cfg.endDate)),pct=Math.min(100,Math.round(el/cfg.totalDays*100)),lw=latestW(),lost=cfg.startWeight-lw,toGo=lw-cfg.targetWeight,streak=getStreak(),sun=isSun(today2),qDn=qsDone(today2),qPct=sun?100:Math.round(qDn/QT*100),lvl=getLvl(),nxXp=LVLS[Math.min(lvl+1,LVLS.length-1)],xpP=lvl<LVLS.length-1?Math.round((usr.xp-LVLS[lvl])/(nxXp-LVLS[lvl])*100):100;
+let nav=`<div class="bnav">`;[["quest","⚔️",t("quest")],["weight","⚖️",t("weight")],["history","📅",t("history")],["stats","🏅",t("stats")]].forEach(([k,ic,l])=>{nav+=`<button class="${curView===k?"act":""}" onclick="curView='${k}';render()"><span class="ni">${ic}</span>${l}</button>`});nav+=`</div>`;
+let b="";
+// ═══ QUEST ═══
 if(curView==="quest"){
-if(sun){
-body=`<div class="rest-day"><div class="rest-emoji">😴</div><div class="rest-title">今天是休息日</div><div class="rest-sub">周日完全休息<br>饮食自由 · 运动自由<br><br>好好休息，明天继续 💪</div></div>`;
-}else{
-const qs=tD.quests||{};
-// day summary
-body+=`<div class="card"><div class="day-summary"><div class="ring-wrap">${ringSvg(qPct)}<div class="ring-text"><div class="ring-num">${qDone}/${qTotal}</div><div class="ring-label">完成</div></div></div><div class="day-stats"><div class="day-stat-row"><span class="day-stat-label">${dayLabel} · 第${wk}周</span><span class="streak-badge">🔥 ${streak}天</span></div><div class="day-stat-row"><span class="day-stat-label">剩余</span><span class="day-stat-val" style="color:var(--blue)">${left}天</span></div><div class="day-stat-row"><span class="day-stat-label">进度</span><span class="day-stat-val">${pct}%</span></div><div class="day-stat-row"><span class="day-stat-label">本周计划</span><span class="day-stat-val">계단 ${sets}세트</span></div></div></div></div>`;
-// quest blocks by time
-let lastTime="";
-QUESTS.forEach(q=>{
-const done=!!qs[q.id];
-let desc=q.desc;
-if(q.id==="breakfast")desc=`삶은 계란 2개 + ${todayFruit} 1개`;
-if(q.id==="exercise")desc=`5층×${sets}세트 + 벽 푸시업 15회×${sets}세트`;
-if(q.time!==lastTime){body+=`<div class="quest-time">${q.time}<span class="qt-line"></span></div>`;lastTime=q.time}
-body+=`<div class="quest-item ${done?"done":""}" onclick="toggleQ('${t}','${q.id}')"><div class="q-check">${done?"✓":""}</div><div class="q-content"><div class="q-title">${q.title}</div>${desc?`<div class="q-desc">${desc}</div>`:""}</div><div class="q-emoji">${q.emoji}</div></div>`;
-// dinner menu after dinner quest
-if(q.id==="dinner"){
-body+=`<div class="card" style="margin-top:2px;margin-bottom:10px">`;
-body+=`<div class="card-title">📋 오늘 저녁 메뉴 선택</div>`;
-DINNER_CATS.forEach((cat,ci)=>{
-const isOpen=openCats[ci];
-body+=`<div class="menu-cat ${isOpen?"open":""}"><div class="menu-cat-title" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${cat.name} ${cat.note?`<span class="menu-note">${cat.note}</span>`:""}</div><div class="menu-list">`;
-cat.items.forEach(item=>{body+=`<div class="menu-item">· ${item}</div>`});
-body+=`</div></div>`;
-});
-body+=`</div>`;
-}
-});
-}
-}
-// WEIGHT VIEW
+if(sun){b=`<div class="rest"><div class="re">😴</div><div class="rt">${t("rest")}</div><div class="rs">${t("restSub").replace(/\n/g,"<br>")}</div></div>`}
+else{const qs=tD.quests||{},quests=getQuests();
+b+=`<div class="gc"><div class="ds"><div class="rw">${ringSvg(qPct,66)}<div class="rtx"><div class="rn">${qDn}/${QT}</div><div class="rl">${t("done")}</div></div></div><div class="dst"><div class="dsr"><span class="dsl">D${el+1} · ${fmtD(today2)}</span><span class="streak-b">🔥 ${streak}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("left")}</span><span class="dsv" style="color:var(--eb)">${left}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("progress")}</span><span class="dsv">${pct}%</span></div><div class="xpbar"><div class="xpfill" style="width:${xpP}%"></div></div><div class="xplbl">Lv.${lvl+1} ${getLN(lvl)} · ${usr.xp}/${nxXp} XP</div></div></div></div>`;
+let lt="";quests.forEach(q=>{const dn=!!qs[q.id];if(q.time!==lt){b+=`<div class="qt">${q.time}<span class="ql"></span></div>`;lt=q.time}b+=`<div class="qi ${dn?"dn":""}" onclick="toggleQ('${today2}','${q.id}')"><div class="qc">${dn?"✓":""}</div><div class="qct"><div class="t">${q.title}</div>${q.desc?`<div class="d">${q.desc}</div>`:""}</div><div class="qe">${q.emoji}</div></div>`;if(q.id==="dn"){b+=`<div class="gc2"><div class="ct2">${t("dinnerTitle")}</div>`;DCATS.forEach((cat,ci)=>{b+=`<div class="mc ${openCats[ci]?"op":""}"><div class="mct" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${cat.n} <span class="mn">${cat.note||""}</span></div><div class="ml">${cat.items.map(i=>`<div class="mi">· ${i}</div>`).join("")}</div></div>`});b+=`</div>`}});
+if(qDn===QT&&!tD.gamePlayed)b+=`<div style="text-align:center;padding:12px"><button class="game-btn" onclick="showGameIntro()">${t("gameUnlock")} 🎮</button></div>`}}
+// ═══ WEIGHT ═══
 if(curView==="weight"){
-body+=`<div class="card"><div class="card-row"><div><div class="big-num">${lw}kg</div><div class="dim">当前体重</div></div><div style="text-align:right"><div class="big-num" style="color:${lost>0?"var(--green)":"var(--red)"}"> ${lost>0?"-":"+"}${Math.abs(lost).toFixed(1)}</div><div class="dim">已减(kg)</div></div></div><div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div><div class="progress-label">${cfg.startWeight}kg → ${cfg.targetWeight}kg · 距目标 ${toGo.toFixed(1)}kg</div></div>`;
-body+=`<div class="card"><div class="card-title">⚖️ 记录体重</div><div style="font-size:11px;color:#555">建议每天早上空腹称重</div><div class="input-row"><input type="number" step="0.1" placeholder="输入体重(kg)" id="wi" value="${tD.weight||""}"/><button class="save-btn" onclick="saveW()">保存</button></div>${tD.weight?`<div class="saved-hint">今日已记录: ${tD.weight}kg ✓</div>`:""}</div>`;
-body+=`<div class="card"><div class="card-title">📉 趋势</div>${buildChart()}</div>`;
-body+=`<div class="card"><div class="card-title">📊 统计</div><div class="card-row"><div class="stat-box"><div class="stat-num">${Object.values(data).filter(v=>v.weight).length}</div><div class="dim">记录次数</div></div><div class="stat-box"><div class="stat-num">${streak}</div><div class="dim">连续打卡</div></div><div class="stat-box"><div class="stat-num">${el}</div><div class="dim">已过天数</div></div></div></div>`;
-}
-// HISTORY VIEW
+const bmi=getBMI(),wl=getWeeklyLoss(),pred=getPredictDate();
+b+=`<div class="gc"><div class="cr"><div><div class="bn glow-cy">${lw}kg</div><div class="dm">${t("current")}</div></div><div style="text-align:right"><div class="bn" style="color:${lost>0?"var(--cy)":"var(--np)"};${lost>0?"text-shadow:0 0 10px rgba(0,255,242,.3)":"text-shadow:0 0 10px rgba(255,45,123,.3)"}">${lost>0?"-":"+"}${Math.abs(lost).toFixed(1)}</div><div class="dm">${t("reduced")}(kg)</div></div></div><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="plb">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${t("toGoal")} ${toGo.toFixed(1)}kg</div></div>`;
+// info cards
+b+=`<div class="gc"><div class="cr"><div class="sb"><div class="sn" style="color:var(--nv)">${bmi||"--"}</div><div class="dm">${t("bmi")}</div></div><div class="sb"><div class="sn" style="color:var(--ny)">${wl||"--"}kg</div><div class="dm">${t("wkLoss")}</div></div><div class="sb"><div class="sn" style="color:var(--mg)">${pred}</div><div class="dm">${t("predict")}</div></div></div></div>`;
+b+=`<div class="gc"><div class="ct2">⚖️ ${t("rec")}</div><div style="font-size:10px;color:#556">${t("recTip")}</div><div class="ir"><input type="number" step="0.1" placeholder="kg" id="wi" value="${tD.weight||""}"/><button class="svb" onclick="saveW()">${t("save")}</button></div>${tD.weight?`<div class="svh">${t("saved").replace("%s",tD.weight)}</div>`:""}</div>`;
+b+=`<div class="gc"><div class="ct2">📉 ${t("trend")}</div>${buildChart()}</div>`}
+// ═══ HISTORY ═══
 if(curView==="history"){
-const days=Math.min(el+1,cfg.totalDays);
-let h="";
-for(let i=0;i<days;i++){
-const ds=addD(cfg.startDate,el-i),e=data[ds]||{},isT=ds===t,di=dBtw(cfg.startDate,ds),sun2=isSunday(ds);
-const qd=sun2?"🌙":e.quests?Object.values(e.quests).filter(Boolean).length+"/"+qTotal:"0/"+qTotal;
-const qp=sun2?100:e.quests?Math.round(Object.values(e.quests).filter(Boolean).length/qTotal*100):0;
-const pColor=sun2?"#555":qp>=80?"var(--green)":qp>=50?"var(--yellow)":"var(--red)";
-h+=`<div class="hist-item"><div class="hist-date">${isT?"今天":fmtD(ds)}${sun2?" 🌙":""}<span class="hist-day">D${di+1}</span></div><div class="hist-icons">${e.weight?`<span class="hist-weight">${e.weight}kg</span>`:'<span class="hist-none">--</span>'}<span class="hist-pct" style="color:${pColor}">${qd}</span></div></div>`;
-}
-body+=`<div class="card"><div class="card-title">📅 历史记录</div><div class="hist-list">${h||'<div class="empty-chart">暂无记录</div>'}</div></div>`;
-body+=`<div class="card"><div class="card-title">⚙️ 挑战信息</div><div style="font-size:12px;color:#666;line-height:2">开始: ${fmtD(cfg.startDate)} · 结束: ${fmtD(cfg.endDate)}<br>${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}天</div></div>`;
-body+=`<button class="end-btn" onclick="endC()">🔄 结束挑战 · 重新开始</button><button class="reset-btn" onclick="resetAll()">🗑 清除所有数据</button>`;
-}
-app.innerHTML=`<div class="header"><div class="logo">🔥 燃脂挑战</div><div class="header-sub">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}天</div></div><div class="content">${body}</div>${nav}`}
-function startC(){const sw=parseFloat(document.getElementById("s-start").value),tw=parseFloat(document.getElementById("s-target").value),days=parseInt(document.getElementById("s-days").value);if(!sw||sw<30||sw>300){toast("请输入有效体重");return}if(!tw||tw<30||tw>300){toast("请输入有效目标体重");return}if(!days||days<7||days>365){toast("天数: 7~365");return}const today=td();cfg={startWeight:sw,targetWeight:tw,totalDays:days,startDate:today,endDate:addD(today,days)};saveC(cfg);data={};data[today]={weight:sw};saveD(data);curView="quest";toast("挑战开始！加油 💪");render()}
-function saveW(){const v=parseFloat(document.getElementById("wi").value);if(v>30&&v<300){sdf(td(),"weight",v)}else{toast("请输入有效体重")}}
-function endC(){if(confirm("确定结束当前挑战？记录将被清除。")){localStorage.removeItem(CK);localStorage.removeItem(DK);cfg=null;data={};curView="quest";render();toast("已重置")}}
-function resetAll(){if(confirm("清除所有数据？不可恢复。")){localStorage.removeItem(CK);localStorage.removeItem(DK);cfg=null;data={};curView="quest";render();toast("已清除")}}
+b+=`<div class="gc"><div class="ct2">📆 ${t("cal")}</div>${buildCal()}<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><span style="font-size:8px;color:var(--cy)">■ ≥80%</span><span style="font-size:8px;color:var(--ny)">■ ≥50%</span><span style="font-size:8px;color:var(--np)">■ <50%</span><span style="font-size:8px;color:var(--nv)">■ ${lang==="zh"?"周日":"일"}</span></div></div>`;
+// weekly report
+const wr=weeklyRate();const wg=wr>=80?"S":wr>=60?"A":wr>=40?"B":wr>=20?"C":"D";const wgc=wr>=80?"var(--cy)":wr>=60?"var(--ny)":wr>=40?"var(--o)":"var(--np)";
+b+=`<div class="gc"><div class="ct2">📊 ${t("wkReport")}</div><div class="cr"><div class="wr-box"><div class="wr-grade" style="color:${wgc};text-shadow:0 0 15px ${wgc}">${wg}</div><div class="wr-label">${lang==="zh"?"等级":"등급"}</div></div><div class="sb"><div class="sn" style="color:${wgc}">${wr}%</div><div class="dm">${t("wkRate")}</div></div><div class="sb"><div class="sn">${avgRate()}%</div><div class="dm">${t("avgRate")}</div></div></div></div>`;
+const days=Math.min(el+1,cfg.totalDays);let h="";
+for(let i=0;i<days;i++){const ds=addD(cfg.startDate,el-i),e=data[ds]||{},isT=ds===today2,di=dBtw(cfg.startDate,ds),s2=isSun(ds);const qd=s2?"🌙":e.quests?Object.values(e.quests).filter(Boolean).length+"/"+QT:"0/"+QT;const qp2=s2?100:e.quests?Math.round(Object.values(e.quests).filter(Boolean).length/QT*100):0;const pc=s2?"var(--nv)":qp2>=80?"var(--cy)":qp2>=50?"var(--ny)":"var(--np)";h+=`<div class="hi"><div class="hd">${isT?t("today"):fmtD(ds)}${s2?" 🌙":""}<span class="hdy">D${di+1}</span></div><div class="hic">${e.weight?`<span class="hw">${e.weight}kg</span>`:'<span class="hn">--</span>'}<span class="hp" style="color:${pc}">${qd}</span></div></div>`}
+b+=`<div class="gc"><div class="ct2">📋 ${t("histTitle")}</div><div class="hl">${h||`<div class="ech">${t("noData")}</div>`}</div></div>`}
+// ═══ STATS ═══
+if(curView==="stats"){
+b+=`<div class="gc"><div class="cr"><div><div style="font-size:10px;color:#667">${t("level")}</div><div style="font-size:28px;font-weight:800;color:var(--ny);text-shadow:0 0 15px rgba(240,255,0,.3)">Lv.${lvl+1}</div><div style="font-size:12px;font-weight:700;color:var(--mg);text-shadow:0 0 8px rgba(255,0,255,.3)">${getLN(lvl)}</div></div><div style="text-align:right"><div style="font-size:10px;color:#667">${t("xp")}</div><div class="sn" style="color:var(--ny)">${usr.xp}</div><div style="font-size:9px;color:#445">${lang==="zh"?"下一级":"다음"}: ${nxXp}</div></div></div><div class="xpbar" style="margin-top:8px"><div class="xpfill" style="width:${xpP}%"></div></div></div>`;
+b+=`<div class="gc"><div class="ct2">${t("stats")}</div><div class="cr"><div class="sb"><div class="sn glow-cy">${totalStars()}</div><div class="dm">⭐ ${t("stars")}</div></div><div class="sb"><div class="sn glow-ny">${streak}</div><div class="dm">🔥 ${t("streak")}</div></div></div><div class="cr" style="margin-top:8px"><div class="sb"><div class="sn" style="color:var(--eb)">${weeklyRate()}%</div><div class="dm">${t("wkRate")}</div></div><div class="sb"><div class="sn" style="color:var(--nv)">${avgRate()}%</div><div class="dm">${t("avgRate")}</div></div></div><div class="cr" style="margin-top:8px"><div class="sb"><div class="sn">${Object.values(data).filter(v=>v.weight).length}</div><div class="dm">${t("recCnt")}</div></div><div class="sb"><div class="sn">${el}</div><div class="dm">${t("elapsed")}</div></div></div></div>`;
+b+=`<div class="gc"><div class="ct2">🏅 ${t("badges")}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
+BDEFS.forEach(bd=>{const u=bd.ck();b+=`<div class="bdg ${u?"":"locked"}">${bd.icon} ${lang==="zh"?bd.zh:bd.ko}</div>`});
+b+=`</div><div class="bdg-next">${lang==="zh"?"▸ 下个":"▸ 다음"}: ${nextBadge()}</div></div>`;
+b+=`<div class="gc"><div class="ct2">⚙️ ${t("info")}</div><div class="info-r"><span class="info-l">${t("startD")}</span><span class="info-v">${fmtD(cfg.startDate)}</span></div><div class="info-r"><span class="info-l">${t("endD")}</span><span class="info-v">${fmtD(cfg.endDate)}</span></div><div class="info-r"><span class="info-l">${t("curW")}</span><span class="info-v">${cfg.startWeight}kg → ${cfg.targetWeight}kg</span></div><div class="info-r"><span class="info-l">${t("days")}</span><span class="info-v">${cfg.totalDays}${t("day")}</span></div>${cfg.height?`<div class="info-r"><span class="info-l">${t("height")}</span><span class="info-v">${cfg.height}cm</span></div>`:""}</div>`;
+b+=`<button class="ebtn" onclick="endC()">${t("end")}</button><button class="rbtn" onclick="resetAll()">${t("reset")}</button>`}
+app.innerHTML=`<div class="hdr"><div class="logo">🔥 ${lang==="zh"?"燃脂挑战":"번지 챌린지"}</div><div class="hdr-r"><span class="lvl-b">Lv.${lvl+1} ${getLN(lvl)}</span><button class="lang-btn" onclick="setLang(lang==='zh'?'ko':'zh')">${lang==="zh"?"한국어":"中文"}</button></div></div><div class="hdr-sub">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}${t("day")}</div><div class="ct">${b}</div>${nav}`}
+function startC(){const sw=parseFloat(document.getElementById("s-sw").value),tw=parseFloat(document.getElementById("s-tw").value),ht=parseInt(document.getElementById("s-ht").value),days=parseInt(document.getElementById("s-d").value);if(!sw||sw<30||sw>300){toast(lang==="zh"?"请输入有效体重":"유효한 체중");return}if(!tw||tw<30||tw>300){toast(lang==="zh"?"请输入有效目标":"유효한 목표");return}if(!ht||ht<100||ht>250){toast(lang==="zh"?"请输入有效身高":"유효한 키");return}if(!days||days<7||days>180){toast("7~180");return}const today2=td();cfg={startWeight:sw,targetWeight:tw,height:ht,totalDays:days,startDate:today2,endDate:addD(today2,days)};saveC(cfg);data={};data[today2]={weight:sw};saveD(data);usr={xp:0};saveU(usr);curView="quest";toast(lang==="zh"?"挑战开始！💪":"도전 시작! 💪");render()}
+function saveW(){const v=parseFloat(document.getElementById("wi").value);if(v>30&&v<300)sdf(td(),"weight",v);else toast(lang==="zh"?"请输入有效体重":"유효한 체중")}
+function endC(){if(confirm(lang==="zh"?"确定结束？":"종료할까요?")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};curView="quest";render()}}
+function resetAll(){if(confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};curView="quest";render()}}
 render();
 </script>
 </body>

@@ -202,6 +202,8 @@ def engine_tests(page):
         m1: C.dailyCheck({coach:mk(), cfg:cfgM, sessions:[ses('2026-11-19')]}, '2026-11-21'),
         reClear: C.dailyCheck({coach:mk({reentry:{until:'2026-11-20', prev:{R:3,N:4,pace:'normal',mode:'stairs'}}}), cfg:cfgM, sessions:[ses('2026-11-19')]}, TODAY),
         reKeep: C.dailyCheck({coach:mk({reentry:{until:'2026-11-28', prev:{R:3,N:4,pace:'normal',mode:'stairs'}}}), cfg:cfgM, sessions:[ses('2026-11-20')]}, TODAY),
+        none9: C.dailyCheck({coach:mk({startDate:'2026-11-01', plan:{R:3,N:2,pace:'easy',mode:'stairs'}}), cfg:cfgM, sessions:[]}, '2026-11-09'),
+        none16: C.dailyCheck({coach:mk({startDate:'2026-11-01', plan:{R:3,N:2,pace:'easy',mode:'stairs'}}), cfg:cfgM, sessions:[]}, '2026-11-16'),
         m1rest: C.dailyCheck({coach:mk(), cfg:cfgM, sessions:[ses('2026-11-20')]}, '2026-11-22') };""")
     rec("M3_not_at_6_days", "M3" not in m["g6"]["rules"] and m["g6"]["coach"]["plan"]["N"] == 4, m["g6"]["rules"])
     rec("M3_at_7_days_reentry_half_easy", "M3" in m["g7"]["rules"] and m["g7"]["coach"]["plan"]["N"] == 2 and m["g7"]["coach"]["plan"]["pace"] == "easy" and m["g7"]["coach"]["reentry"]["prev"]["N"] == 4, m["g7"]["coach"]["plan"])
@@ -209,6 +211,7 @@ def engine_tests(page):
     rec("M4_at_14_days_retest", "M4" in m["g14"]["rules"] and m["g14"]["coach"]["needRetest"] is True, m["g14"]["rules"])
     rec("M1_missed_yesterday_no_change", "M1" in m["m1"]["rules"] and m["m1"]["coach"]["plan"]["N"] == 3, m["m1"]["rules"])
     rec("M3_reentry_cleared_after_return_and_expiry", m["reClear"]["coach"]["reentry"] is None and m["reKeep"]["coach"]["reentry"] is not None, [m["reClear"]["coach"]["reentry"], m["reKeep"]["coach"]["reentry"]])
+    rec("M3_M4_skip_with_zero_sessions", not any(r in m["none9"]["rules"] + m["none16"]["rules"] for r in ["M3","M4"]) and m["none9"]["coach"]["plan"]["N"] == 2 and m["none16"]["coach"]["reentry"] is None and not m["none16"]["coach"]["needRetest"], [m["none9"]["rules"], m["none16"]["rules"]])
     rec("M1_not_on_rest_day", "M1" not in m["m1rest"]["rules"], m["m1rest"]["rules"])
 
     # ---------- adherence ----------

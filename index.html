@@ -408,6 +408,7 @@ function weekKey(today,checkinDow){
   const diff=(cur-cd+7)%7;
   return addD(today,-diff);
 }
+// Weekly ladder cap is NET movement in the check-in week: +1 then -1 then -1 is allowed because the net stays within ±1.
 function canMove(c,delta,today){
   if(!c||!today)return true;
   const cd=(c.checkinDow===undefined||c.checkinDow===null)?0:Number(c.checkinDow);
@@ -606,7 +607,9 @@ function dailyCheck(state,today){
   if(c.reentry&&c.reentry.until&&today>c.reentry.until&&doneList.some(x=>x.d>=addD(c.reentry.until,-7)))c.reentry=null;
   const gap=dBtw(last,today);
   const rules=[];
-  if(gap>=14){
+  // M3/M4 count from the last logged session (spec), so they never fire before the first session.
+  const hasSession=doneList.length>0;
+  if(hasSession&&gap>=14){
     c.needRetest=true;
     if(!c.reentry){
       c.reentry={until:addD(today,7),prev:cloneObj(c.plan)};
@@ -614,7 +617,7 @@ function dailyCheck(state,today){
       c.plan.pace="easy";
     }
     rules.push("M4");
-  }else if(gap>=7&&gap<=13&&!c.reentry){
+  }else if(hasSession&&gap>=7&&gap<=13&&!c.reentry){
     c.reentry={until:addD(today,7),prev:cloneObj(c.plan)};
     c.plan.N=Math.max(1,Math.ceil(c.plan.N/2));
     c.plan.pace="easy";

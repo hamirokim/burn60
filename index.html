@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<!-- burn60 v2 - single-file offline health challenge app (Mifflin-St Jeor direct implementation) -->
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="燃脂挑战">
-<title>🔥 燃脂挑战</title>
+<meta name="apple-mobile-web-app-title" content="버닝 챌린지">
+<title>🔥 버닝 챌린지</title>
 <style>
 :root{--cy:#00fff2;--mg:#ff00ff;--ny:#f0ff00;--np:#ff2d7b;--eb:#0080ff;--nv:#bf00ff;--bg:#06060e;--glass:rgba(255,255,255,0.04);--glass2:rgba(255,255,255,0.07);--gborder:rgba(255,255,255,0.08);--gborder2:rgba(255,255,255,0.12);--dim:#556;--txt:#d8dce8}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -155,6 +156,18 @@ body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;backgroun
 .wr-box{text-align:center;padding:8px 0}
 .wr-grade{font-size:36px;font-weight:800}
 .wr-label{font-size:11px;color:#667;margin-top:2px}
+/* v2 onboarding & disclaimer & backup */
+.disc{font-size:10px;color:#778;line-height:1.5;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--gborder);margin-top:12px;text-align:left}
+.ob-step{font-size:11px;color:var(--cy);font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.ob-q{font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.4}
+.ob-opts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ob-opt{flex:1 1 calc(50% - 6px);min-width:90px;padding:10px 8px;border-radius:10px;border:1px solid var(--gborder2);background:rgba(255,255,255,.04);color:var(--txt);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+.ob-opt.on{border-color:var(--cy);background:rgba(0,255,242,.14);color:var(--cy);box-shadow:0 0 10px rgba(0,255,242,.2)}
+.ob-nav{display:flex;gap:8px;margin-top:10px}
+.ob-btn2{flex:1;padding:12px;border-radius:12px;border:1px solid var(--gborder2);background:var(--glass2);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer}
+.ob-warn{padding:10px 12px;border-radius:10px;background:rgba(240,255,0,.08);border:1px solid rgba(240,255,0,.3);color:var(--ny);font-size:11px;line-height:1.5;margin-bottom:10px}
+.ob-stop{padding:12px;border-radius:10px;background:rgba(255,45,123,.12);border:1px solid rgba(255,45,123,.4);color:var(--np);font-size:12px;font-weight:700;line-height:1.5;margin-bottom:10px}
+.tdee-box{padding:10px 12px;border-radius:10px;background:rgba(0,255,242,.05);border:1px solid rgba(0,255,242,.2);font-size:11px;line-height:1.6;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -162,23 +175,41 @@ body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;backgroun
 <div id="app"></div>
 <div id="overlay" class="ov" style="display:none"></div>
 <script>
+const DISC_KO="이 앱은 병원 진단·치료를 대신하지 않습니다. 질환, 임신, 부상, 섭식 문제가 있으면 사용을 멈추고 의사와 상담하세요. 식단과 운동의 책임은 본인에게 있습니다.";
+const DISC_ZH="本应用不能代替医疗机构的诊断或治疗。如有基础疾病、孕期、关节损伤或进食问题，请立即停止使用并咨询医生。饮食与运动方案的责任由用户本人承担。";
 const L={
-zh:{quest:"任务",weight:"体重",history:"历史",stats:"统计",start:"🚀 开始挑战",curW:"当前体重",goalW:"目标体重",height:"身高",days:"挑战天数",day:"天",left:"剩余",done:"完成",streak:"连续打卡",progress:"进度",week:"第%s周",plan:"本周计划",sets:"组",rest:"今天是休息日",restSub:"周日完全休息\n饮食自由 · 运动自由\n好好休息，明天继续 💪",water:"喝水",water_d:"250ml",weigh:"称体重",weigh_d:"空腹记录",exercise:"楼梯运动",ex_d:"5层×%s组 + 墙壁俯卧撑15次×%s组",breakfast:"早餐",lunch:"午餐",lunch_d:"黄瓜1根 + 煮鸡蛋1个",dinner:"晚餐",dinner_d:"从下方分类选择",fasting:"禁食确认",fasting_d:"20点后只喝水/茶",dinnerTitle:"🍽️ 晚餐菜单",rec:"记录体重",recTip:"建议每天早上空腹称重",save:"保存",saved:"已记录: %skg ✓",trend:"趋势",noData:"暂无数据",histTitle:"历史记录",today:"今天",info:"挑战信息",startD:"开始",endD:"结束",reset:"🗑 清除所有数据",end:"🔄 结束挑战",reduced:"已减",current:"当前",toGoal:"距目标",recCnt:"记录次数",elapsed:"已过天数",cal:"月历",badges:"成就",level:"等级",xp:"经验",wkReport:"本周报告",wkRate:"周完成率",avgRate:"总平均",stars:"完美天数",gameUnlock:"🎮 游戏已解锁！",playGame:"开始游戏",score:"得分",lives:"生命",gameOver:"游戏结束",bmi:"BMI",predict:"预计达标",wkLoss:"周均减重",dataHint:"数据保存在浏览器中",egg:"煮鸡蛋2个",fruit:["橙子","苹果","香蕉"],nextBdg:"下个成就"},
-ko:{quest:"퀘스트",weight:"체중",history:"기록",stats:"통계",start:"🚀 시작",curW:"현재 체중",goalW:"목표 체중",height:"키",days:"도전 일수",day:"일",left:"남은 일수",done:"완료",streak:"연속 달성",progress:"진행률",week:"제%s주",plan:"이번 주",sets:"세트",rest:"오늘은 휴식일",restSub:"일요일 완전 휴식\n식단 자유 · 운동 자유\n푹 쉬고 내일 다시 💪",water:"물 마시기",water_d:"250ml",weigh:"체중 측정",weigh_d:"공복 기록",exercise:"계단 운동",ex_d:"5층×%s세트 + 벽 푸시업 15회×%s세트",breakfast:"아침",lunch:"점심",lunch_d:"오이 1개 + 삶은 계란 1개",dinner:"저녁",dinner_d:"아래에서 선택",fasting:"금식 확인",fasting_d:"20시 이후 물/차만",dinnerTitle:"🍽️ 저녁 메뉴",rec:"체중 기록",recTip:"매일 아침 공복 측정",save:"저장",saved:"기록: %skg ✓",trend:"추세",noData:"데이터 없음",histTitle:"기록",today:"오늘",info:"도전 정보",startD:"시작",endD:"종료",reset:"🗑 전체 삭제",end:"🔄 종료 & 재시작",reduced:"감량",current:"현재",toGoal:"목표까지",recCnt:"기록 횟수",elapsed:"경과 일수",cal:"달력",badges:"업적",level:"레벨",xp:"경험치",wkReport:"주간 리포트",wkRate:"주간 완료율",avgRate:"전체 평균",stars:"퍼펙트",gameUnlock:"🎮 게임 해금!",playGame:"게임 시작",score:"점수",lives:"목숨",gameOver:"게임 오버",bmi:"BMI",predict:"예상 달성일",wkLoss:"주간 감량",dataHint:"브라우저에 저장",egg:"삶은 계란 2개",fruit:["오렌지","사과","바나나"],nextBdg:"다음 업적"}
+zh:{appTitle:"燃脂挑战",disclaimer:DISC_ZH,quest:"任务",weight:"体重",history:"历史",stats:"统计",start:"🚀 开始挑战",curW:"当前体重",goalW:"目标体重",height:"身高",days:"挑战天数",day:"天",left:"剩余",done:"完成",streak:"连续打卡",progress:"进度",week:"第%s周",plan:"本周计划",sets:"组",rest:"今天是休息日",restSub:"周日完全休息\n饮食自由 · 运动自由\n好好休息，明天继续 💪",water:"喝水",water_d:"250ml",weigh:"称体重",weigh_d:"空腹记录",exercise:"楼梯运动",ex_d:"5层×%s组 + 墙壁俯卧撑15次×%s组",breakfast:"早餐",lunch:"午餐",lunch_d:"黄瓜1根 + 煮鸡蛋1个",dinner:"晚餐",dinner_d:"从下方分类选择",fasting:"禁食确认",fasting_d:"20点后只喝水/茶",dinnerTitle:"🍽️ 晚餐菜单",rec:"记录体重",recTip:"建议每天早上空腹称重",save:"保存",saved:"已记录: %skg ✓",trend:"趋势",noData:"暂无数据",histTitle:"历史记录",today:"今天",info:"挑战信息",startD:"开始",endD:"结束",reset:"🗑 清除所有数据",end:"🔄 结束挑战",reduced:"变化",current:"当前",toGoal:"距目标",recCnt:"记录次数",elapsed:"已过天数",cal:"月历",badges:"成就",level:"等级",xp:"经验",wkReport:"本周报告",wkRate:"周完成率",avgRate:"总平均",stars:"完美天数",gameUnlock:"🎮 游戏已解锁！",playGame:"开始游戏",score:"得分",lives:"生命",gameOver:"游戏结束",bmi:"BMI",predict:"预计达标",wkLoss:"周均变化",dataHint:"数据保存在浏览器中",egg:"煮鸡蛋2个",fruit:["橙子","苹果","香蕉"],nextBdg:"下个成就",exportBtn:"📤 导出备份 (JSON)",importBtn:"📥 导入备份 (JSON)"},
+ko:{appTitle:"버닝 챌린지",disclaimer:DISC_KO,quest:"퀘스트",weight:"체중",history:"기록",stats:"통계",start:"🚀 시작",curW:"현재 체중",goalW:"목표 체중",height:"키",days:"도전 일수",day:"일",left:"남은 일수",done:"완료",streak:"연속 달성",progress:"진행률",week:"제%s주",plan:"이번 주",sets:"세트",rest:"오늘은 휴식일",restSub:"일요일 완전 휴식\n식단 자유 · 운동 자유\n푹 쉬고 내일 다시 💪",water:"물 마시기",water_d:"250ml",weigh:"체중 측정",weigh_d:"공복 기록",exercise:"계단 운동",ex_d:"5층×%s세트 + 벽 푸시업 15회×%s세트",breakfast:"아침",lunch:"점심",lunch_d:"오이 1개 + 삶은 계란 1개",dinner:"저녁",dinner_d:"아래에서 선택",fasting:"금식 확인",fasting_d:"20시 이후 물/차만",dinnerTitle:"🍽️ 저녁 메뉴",rec:"체중 기록",recTip:"매일 아침 공복 측정",save:"저장",saved:"기록: %skg ✓",trend:"추세",noData:"데이터 없음",histTitle:"기록",today:"오늘",info:"도전 정보",startD:"시작",endD:"종료",reset:"🗑 전체 삭제",end:"🔄 종료 & 재시작",reduced:"변화",current:"현재",toGoal:"목표까지",recCnt:"기록 횟수",elapsed:"경과 일수",cal:"달력",badges:"업적",level:"레벨",xp:"경험치",wkReport:"주간 리포트",wkRate:"주간 완료율",avgRate:"전체 평균",stars:"퍼펙트",gameUnlock:"🎮 게임 해금!",playGame:"게임 시작",score:"점수",lives:"목숨",gameOver:"게임 오버",bmi:"BMI",predict:"예상 달성일",wkLoss:"주간 변화",dataHint:"브라우저에 저장",egg:"삶은 계란 2개",fruit:["오렌지","사과","바나나"],nextBdg:"다음 업적",exportBtn:"📤 백업 내보내기 (JSON)",importBtn:"📥 백업 가져오기 (JSON)"}
 };
-let lang=localStorage.getItem("b60lang")||"zh";
-function t(k){return L[lang][k]||L.zh[k]||k}
-function setLang(l){lang=l;localStorage.setItem("b60lang",l);render()}
+let lang="ko";
+try{const savedL=localStorage.getItem("b60lang");if(savedL==="zh"||savedL==="ko")lang=savedL}catch(e){}
+function t(k){return(L[lang]&&L[lang][k])||L.ko[k]||L.zh[k]||k}
+function syncDocLang(){
+  document.documentElement.lang=lang==="zh"?"zh-CN":"ko";
+  const ttl=lang==="zh"?"燃脂挑战":"버닝 챌린지";
+  document.title="🔥 "+ttl;
+  const m=document.querySelector('meta[name="apple-mobile-web-app-title"]');
+  if(m)m.setAttribute("content",ttl);
+}
+function setLang(l){lang=l==="zh"?"zh":"ko";try{localStorage.setItem("b60lang",lang)}catch(e){}syncDocLang();render()}
 function toggleLang(){setLang(lang==="zh"?"ko":"zh")}
+syncDocLang();
 const CK="burn60_config",DK="burn60_data",UK="burn60_user";
 const DCATS=[
-{icon:"🍲",n:"찌개류/锅类",note:"半碗饭",items:["순두부찌개/嫩豆腐锅","된장찌개/大酱汤","김치찌개/泡菜锅","매운탕/辣鱼汤"]},
-{icon:"🫕",n:"찜·조림/蒸炖",note:"少饭或无饭",items:["야채찜/蔬菜蒸","아구찜/安康鱼蒸","해물찜/海鲜蒸","코다리찜/明太鱼蒸","갈치조림/带鱼炖","닭볶음탕/鸡炖汤"]},
-{icon:"🥗",n:"샐러드/沙拉",items:["닭가슴살/鸡胸沙拉","연어/三文鱼沙拉","포케 볼/Poke Bowl","곡물/谷物沙拉","두부/豆腐沙拉"]},
-{icon:"🥩",n:"구이/烤肉",note:"生菜包·无饭",items:["삼겹살/五花肉","목살/梅花肉","훈제오리/熏鸭","닭가슴살/鸡胸","고등어/鲭鱼","삼치/鲅鱼","보쌈/水煮肉"]},
-{icon:"🍜",n:"탕·국밥/汤饭",note:"半碗饭",items:["감자탕/脊骨汤","삼계탕/参鸡汤(半)","모듬국밥/什锦汤饭"]},
-{icon:"🍚",n:"한식정식/套餐",note:"半碗饭",items:["쌈밥/包饭","비빔밥/拌饭","회덮밥/刺身饭","제육/辣炒猪肉","불고기/烤肉"]}
+{icon:"🍲",nKo:"찌개류",nZh:"锅类",noteKo:"밥 반 공기",noteZh:"半碗饭",items:[{ko:"순두부찌개",zh:"嫩豆腐锅"},{ko:"된장찌개",zh:"大酱汤"},{ko:"김치찌개",zh:"泡菜锅"},{ko:"매운탕",zh:"辣鱼汤"}]},
+{icon:"🫕",nKo:"찜·조림",nZh:"蒸炖",noteKo:"밥 적게 또는 없이",noteZh:"少饭或无饭",items:[{ko:"야채찜",zh:"蔬菜蒸"},{ko:"아구찜",zh:"安康鱼蒸"},{ko:"해물찜",zh:"海鲜蒸"},{ko:"코다리찜",zh:"明太鱼蒸"},{ko:"갈치조림",zh:"带鱼炖"},{ko:"닭볶음탕",zh:"鸡炖汤"}]},
+{icon:"🥗",nKo:"샐러드",nZh:"沙拉",noteKo:"",noteZh:"",items:[{ko:"닭가슴살 샐러드",zh:"鸡胸沙拉"},{ko:"연어 샐러드",zh:"三文鱼沙拉"},{ko:"포케 볼",zh:"Poke Bowl"},{ko:"곡물 샐러드",zh:"谷物沙拉"},{ko:"두부 샐러드",zh:"豆腐沙拉"}]},
+{icon:"🥩",nKo:"구이",nZh:"烤肉",noteKo:"상추쌈·밥 없이",noteZh:"生菜包·无饭",items:[{ko:"삼겹살",zh:"五花肉"},{ko:"목살",zh:"梅花肉"},{ko:"훈제오리",zh:"熏鸭"},{ko:"닭가슴살",zh:"鸡胸"},{ko:"고등어",zh:"鲭鱼"},{ko:"삼치",zh:"鲅鱼"},{ko:"보쌈",zh:"水煮肉"}]},
+{icon:"🍜",nKo:"탕·국밥",nZh:"汤饭",noteKo:"밥 반 공기",noteZh:"半碗饭",items:[{ko:"감자탕",zh:"脊骨汤"},{ko:"삼계탕(반)",zh:"参鸡汤(半)"},{ko:"모듬국밥",zh:"什锦汤饭"}]},
+{icon:"🍚",nKo:"한식정식",nZh:"套餐",noteKo:"밥 반 공기",noteZh:"半碗饭",items:[{ko:"쌈밥",zh:"包饭"},{ko:"비빔밥",zh:"拌饭"},{ko:"회덮밥",zh:"刺身饭"},{ko:"제육",zh:"辣炒猪肉"},{ko:"불고기",zh:"烤肉"}]}
 ];
+function dcatName(c){return lang==="zh"?c.nZh:c.nKo}
+function dcatNote(c){
+  if(cfg&&cfg.goal==="gain")return lang==="zh"?"正常米饭+蛋白质":"밥 1공기+단백질 보충";
+  if(cfg&&cfg.goal==="maintain")return lang==="zh"?"适量均衡":"적정량 균형 식사";
+  return lang==="zh"?c.noteZh:c.noteKo;
+}
+function dcatItem(it){return lang==="zh"?it.zh:it.ko}
 const LVLS=[0,100,250,500,800,1200,1700,2300,3000,4000];
 const LN_ZH=["新手","学徒","战士","精英","勇者","英雄","大师","传奇","神话","不朽"];
 const LN_KO=["초보","수련생","전사","정예","용사","영웅","마스터","전설","신화","불멸"];
@@ -249,32 +280,231 @@ function fmtD(s){const d=new Date(s+"T00:00:00");return`${d.getMonth()+1}/${d.ge
 function addD(s,n){const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function dow(s){return new Date(s+"T00:00:00").getDay()}
 function isSun(s){return dow(s)===0}
-function loadC(){try{return JSON.parse(localStorage.getItem(CK))}catch{return null}}
-function saveC(c){localStorage.setItem(CK,JSON.stringify(c))}
-function loadD(){try{return JSON.parse(localStorage.getItem(DK)||"{}")}catch{return{}}}
-function saveD(d){localStorage.setItem(DK,JSON.stringify(d))}
-function loadU(){try{return JSON.parse(localStorage.getItem(UK)||'{"xp":0}')}catch{return{xp:0}}}
-function saveU(u){localStorage.setItem(UK,JSON.stringify(u))}
+function purgeLegacyIfNeeded(){
+  try{
+    const rawC=localStorage.getItem(CK);
+    const rawD=localStorage.getItem(DK);
+    const rawU=localStorage.getItem(UK);
+    if(rawC!==null||rawD!==null||rawU!==null){
+      let parsed=null;
+      try{parsed=rawC?JSON.parse(rawC):null}catch(e){parsed=null}
+      if(!parsed||typeof parsed!=="object"||parsed.schemaVersion!==2){
+        localStorage.removeItem(CK);
+        localStorage.removeItem(DK);
+        localStorage.removeItem(UK);
+      }
+    }
+  }catch(e){}
+}
+purgeLegacyIfNeeded();
+function loadC(){
+  try{
+    const c=JSON.parse(localStorage.getItem(CK));
+    if(c&&typeof c==="object"&&c.schemaVersion===2)return c;
+    return null;
+  }catch(e){return null}
+}
+function saveC(c){try{localStorage.setItem(CK,JSON.stringify(c))}catch(e){}}
+function loadD(){try{const d=JSON.parse(localStorage.getItem(DK)||"{}");return(d&&typeof d==="object"&&!Array.isArray(d))?d:{}}catch(e){return{}}}
+function saveD(d){try{localStorage.setItem(DK,JSON.stringify(d))}catch(e){}}
+function loadU(){try{const u=JSON.parse(localStorage.getItem(UK)||'{"xp":0}');return(u&&typeof u==="object"&&typeof u.xp==="number")?u:{xp:0}}catch(e){return{xp:0}}}
+function saveU(u){try{localStorage.setItem(UK,JSON.stringify(u))}catch(e){}}
 let cfg=loadC(),data=loadD(),usr=loadU(),curView="quest",openCats={};
-function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.remove("hide");setTimeout(()=>el.classList.add("hide"),1800)}
+function toast(m){const el=document.getElementById("toast");if(!el)return;el.textContent=m;el.classList.remove("hide");setTimeout(()=>el.classList.add("hide"),1800)}
+
+// ═══ STEP 3: Mifflin-St Jeor BMR / TDEE & Speed Guard ═══
+const PAL_MAP={sedentary:1.2,light:1.375,standing:1.55,moderate:1.55,labor:1.725,active:1.725};
+function resolvePal(palOrWork){
+  if(typeof palOrWork==="number"&&palOrWork>0)return palOrWork;
+  return PAL_MAP[palOrWork]||1.55;
+}
+function calcBMR(sex,kg,cm,age){
+  const w=Number(kg)||0,h=Number(cm)||0,a=Number(age)||0;
+  const base=10*w+6.25*h-5*a;
+  return(sex==="f"||sex==="female")?base-161:base+5;
+}
+function calcTDEE(sex,kg,cm,age,pal){
+  return calcBMR(sex,kg,cm,age)*resolvePal(pal);
+}
+function calcWeeklyRate(start,target,days){
+  const d=Number(days)||0;
+  if(d<=0)return 0;
+  return((Number(start)-Number(target))/(d/7));
+}
+function calcCaloriePlan(plan){
+  const sex=plan.sex||"m";
+  const bmr=calcBMR(sex,plan.startWeight,plan.height,plan.age);
+  const pal=resolvePal(plan.pal||plan.workType);
+  const tdee=bmr*pal;
+  const floor=(sex==="f"||sex==="female")?1200:1500;
+  const goal=plan.goal||"loss";
+  let recMin=Math.round(tdee),recMax=Math.round(tdee),recTarget=Math.round(tdee),clamped=false;
+  if(goal==="loss"){
+    const rawMin=Math.round(tdee-500),rawMax=Math.round(tdee-300),rawT=Math.round(tdee-400);
+    if(rawMin<floor||rawT<floor){clamped=true}
+    recMin=Math.max(floor,rawMin);
+    recMax=Math.max(floor,rawMax);
+    recTarget=Math.max(floor,rawT);
+  }else if(goal==="gain"){
+    recMin=Math.round(tdee+300);
+    recMax=Math.round(tdee+500);
+    recTarget=Math.round(tdee+400);
+  }
+  return{bmr,tdee,bmrRound:Math.round(bmr),tdeeRound:Math.round(tdee),floor,recMin,recMax,recTarget,clamped};
+}
+function checkBodyAndRate(plan){
+  if(!plan||typeof plan!=="object")return{ok:false,blocked:true,code:"invalid",reason:"Invalid plan"};
+  const goal=plan.goal||"loss";
+  const sex=plan.sex;
+  if(sex!=="m"&&sex!=="f"){
+    return{ok:false,blocked:true,code:"sex",reason:lang==="zh"?"请选择生理性别。":"성별을 선택하세요."};
+  }
+  const rawAge=plan.age,rawHt=plan.height,rawSw=plan.startWeight,rawTw=goal==="maintain"?plan.startWeight:plan.targetWeight,rawDays=plan.totalDays!==undefined?plan.totalDays:plan.days;
+  if(rawAge===""||rawAge===null||rawAge===undefined||rawHt===""||rawHt===null||rawHt===undefined||rawSw===""||rawSw===null||rawSw===undefined||rawTw===""||rawTw===null||rawTw===undefined||rawDays===""||rawDays===null||rawDays===undefined){
+    return{ok:false,blocked:true,code:"range",reason:lang==="zh"?"请输入有效的身体数据与天数(7~180天)。":"나이, 키, 체중, 기간(7~180일)을 올바르게 입력하세요."};
+  }
+  const sw=Number(rawSw),tw=Number(rawTw),ht=Number(rawHt),age=Number(rawAge),days=Number(rawDays);
+  if(!sw||sw<30||sw>300||!tw||tw<30||tw>300||!ht||ht<100||ht>250||!age||age<15||age>100||!days||days<7||days>180){
+    return{ok:false,blocked:true,code:"range",reason:lang==="zh"?"请输入有效的身体数据与天数(7~180天)。":"나이, 키, 체중, 기간(7~180일)을 올바르게 입력하세요."};
+  }
+  const hM=ht/100,bmi=sw/(hM*hM);
+  if(goal==="loss"){
+    if(bmi<18.5){
+      return{ok:false,blocked:true,code:"underweight",reason:lang==="zh"?`当前 BMI (${bmi.toFixed(1)}) 低于 18.5（偏瘦），系统已拦截减重计划。`:`현재 저체중(BMI ${bmi.toFixed(1)} < 18.5)이므로 감량 도전을 시작할 수 없습니다.`};
+    }
+    if(tw>=sw){
+      return{ok:false,blocked:true,code:"loss_dir",reason:lang==="zh"?"减重模式下目标体重必须低于当前体重（或切换为增重/维持模式）。":"감량 모드에서는 목표 체중이 현재 체중보다 낮아야 합니다. (증량/유지 모드로 전환하거나 목표를 수정하세요)"};
+    }
+    const rate=calcWeeklyRate(sw,tw,days);
+    if(rate>2.0){
+      return{ok:false,blocked:true,rate,code:"rate_over_2",reason:lang==="zh"?`周均减重 ${rate.toFixed(2)}kg/周 超过 2kg/周安全上限，已阻止开始。请延长天数或调高目标体重。`:`주당 감량 속도(${rate.toFixed(2)}kg/주)가 2kg/주를 초과하여 차단되었습니다. 기간을 늘리거나 목표 체중을 높여주세요.`};
+    }
+    if(rate>1.0){
+      return{ok:false,blocked:true,warn:true,rate,code:"rate_over_1",reason:lang==="zh"?`⚠️ 强烈警告：周均减重 ${rate.toFixed(2)}kg/周 超过 1kg/周建议值！请重新调整挑战天数或目标体重至 ≤1kg/周。`:`⚠️ 강한 경고: 주당 감량 속도가 ${rate.toFixed(2)}kg/주로 권장 기준(1kg/주)을 초과합니다. 건강을 위해 기간을 늘리거나 목표 체중을 다시 설정하세요.`};
+    }
+  }else if(goal==="gain"){
+    if(tw<=sw){
+      return{ok:false,blocked:true,code:"gain_dir",reason:lang==="zh"?"增重模式下目标体重必须高于当前体重（或切换为减重/维持模式）。":"증량 모드에서는 목표 체중이 현재 체중보다 높아야 합니다. (감량/유지 모드로 전환하거나 목표를 수정하세요)"};
+    }
+    const gRate=Math.abs(calcWeeklyRate(sw,tw,days));
+    if(gRate>1.5){
+      return{ok:false,blocked:true,warn:true,rate:gRate,code:"gain_rate",reason:lang==="zh"?`⚠️ 周均增重 ${gRate.toFixed(2)}kg/周 过快，请延长天数或调整目标体重。`:`⚠️ 주당 증량 속도(${gRate.toFixed(2)}kg/주)가 너무 빠릅니다. 기간이나 목표 체중을 다시 조정해주세요.`};
+    }
+  }
+  return{ok:true,blocked:false,code:"ok",rate:calcWeeklyRate(sw,tw,days)};
+}
+function canStart(plan){
+  if(!plan||typeof plan!=="object")return{ok:false,blocked:true,code:"invalid",reason:"Invalid plan"};
+  const sex=plan.sex;
+  if(sex==="f"&&plan.preg==="yes"){
+    return{ok:false,blocked:true,safetyStop:true,code:"preg_stop",reason:lang==="zh"?"孕期或哺乳期请停止使用并咨询专科医生。":"임신·수유 중에는 도전을 시작할 수 없습니다. 전문의와 상담하세요."};
+  }
+  if(plan.ed==="high"){
+    return{ok:false,blocked:true,safetyStop:true,code:"ed_stop",reason:lang==="zh"?"存在高频极端节食或暴食风险，请停止使用并寻求专业医疗帮助。":"섭식장애(극단 절식·폭식) 고위험군으로 도전을 시작할 수 없습니다. 전문의 상담을 권장합니다."};
+  }
+  const bodyChk=checkBodyAndRate(plan);
+  if(!bodyChk.ok)return bodyChk;
+  if(!plan.med){
+    return{ok:false,blocked:true,code:"med_req",reason:lang==="zh"?"请选择慢性疾病或服药情况。":"질환·복용 중인 약 문항을 선택해주세요."};
+  }
+  if(plan.med!=="none"&&!plan.medAck){
+    return{ok:false,blocked:true,code:"med_ack",reason:lang==="zh"?"请确认已与医生沟通后再继续。":"질환·복용 약이 있는 경우 '의사와 상의 후 진행' 확인이 필요합니다."};
+  }
+  if(sex==="f"&&!plan.preg){
+    return{ok:false,blocked:true,code:"preg_req",reason:lang==="zh"?"请选择是否处于孕期或哺乳期。":"임신·수유 여부를 선택해주세요."};
+  }
+  if(!plan.ed){
+    return{ok:false,blocked:true,code:"ed_req",reason:lang==="zh"?"请选择进食障碍经历情况。":"섭식장애 경험 문항을 선택해주세요."};
+  }
+  return bodyChk;
+}
+
+// ═══ STEP 5: Dynamic Quests by Mode, Preset, Muscle & Pain Substitution ═══
 const QT=14;
-function getQuests(){const s=exSets();const fr=lang==="zh"?["橙子","苹果","香蕉"]:["오렌지","사과","바나나"];const fi=cfg?dBtw(cfg.startDate,td())%3:0;
-return[
-{id:"w1",time:"07:00",emoji:"💧",title:t("water"),desc:t("water_d")},
-{id:"wt",time:"07:00",emoji:"⚖️",title:t("weigh"),desc:t("weigh_d")},
-{id:"ex",time:"07:10",emoji:"🏃",title:t("exercise"),desc:t("ex_d").replace(/%s/g,s)},
-{id:"w2",time:"07:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"早餐前30分钟 + 运动后补水":"아침 30분 전 + 운동 후 보충"},
-{id:"bf",time:"08:00",emoji:"🍳",title:t("breakfast"),desc:t("egg")+" + "+fr[fi]},
-{id:"w3",time:"09:30",emoji:"💧",title:t("water"),desc:t("water_d")},
-{id:"w4",time:"12:00",emoji:"💧",title:t("water"),desc:t("water_d")},
-{id:"w5",time:"13:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"午餐前30分钟":"점심 30분 전"},
-{id:"ln",time:"14:00",emoji:"🥒",title:t("lunch"),desc:t("lunch_d")},
-{id:"w6",time:"16:00",emoji:"💧",title:t("water"),desc:t("water_d")},
-{id:"w7",time:"18:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"晚餐前30分钟":"저녁 30분 전"},
-{id:"dn",time:"19:00",emoji:"🍲",title:t("dinner"),desc:t("dinner_d")},
-{id:"w8",time:"21:00",emoji:"💧",title:t("water"),desc:t("water_d")},
-{id:"fs",time:"23:00",emoji:"🌙",title:t("fasting"),desc:t("fasting_d")}
-]}
+function exSets(){
+  if(!cfg)return 7;
+  const w=Math.floor(Math.max(0,dBtw(cfg.startDate,td()))/7)+1;
+  let base=w<=1?7:w<=2?8:w<=4?10:12;
+  if(cfg.muscle)base+=2;
+  return base;
+}
+function buildExQuestText(sets){
+  const pains=(cfg&&Array.isArray(cfg.pains))?cfg.pains:[];
+  const hasKnee=pains.includes("knee")||pains.includes("ankle");
+  const hasWrist=pains.includes("wrist");
+  const hasBack=pains.includes("back");
+  const musTag=(cfg&&cfg.muscle)?(lang==="zh"?" [增肌强化]":" [근력 강화]"):"";
+  let title=lang==="zh"?"楼梯与力量运动":"계단·근력 운동";
+  if(hasKnee&&hasWrist){
+    title=lang==="zh"?"温和步行与核心运动":"관절 보호 걷기·코어 운동";
+  }else if(hasKnee){
+    title=lang==="zh"?"平地步行运动 (护膝)":"평지·제자리 걷기 (무릎 보호)";
+  }else if(hasWrist){
+    title=lang==="zh"?"楼梯与背部夹紧运动 (护腕)":"계단·등 조이기 운동 (손목 보호)";
+  }
+  const part1=hasKnee
+    ?(lang==="zh"?`平地/原地踏步10分钟×${sets}组`:`평지·제자리 걷기 10분×${sets}세트`)
+    :(lang==="zh"?`爬楼梯5层×${sets}组`:`계단 5층×${sets}세트`);
+  const part2=hasWrist
+    ?(lang==="zh"?`站立夹背与核心收紧15次×${sets}组`:`서서 등 조이기·코어 버티기 15회×${sets}세트`)
+    :hasBack
+      ?(lang==="zh"?`靠墙静蹲/轻俯卧撑12次×${sets}组`:`벽 짚고 버티기 12회×${sets}세트`)
+      :(lang==="zh"?`墙壁俯卧撑15次×${sets}组`:`벽 푸시업 15회×${sets}세트`);
+  return{title:title+musTag,desc:`${part1} + ${part2}`};
+}
+function getQuests(){
+  const s=exSets();
+  const fr=lang==="zh"?["橙子","苹果","香蕉"]:["오렌지","사과","바나나"];
+  const fi=cfg?Math.abs(dBtw(cfg.startDate,td()))%3:0;
+  const goal=(cfg&&cfg.goal)||"loss";
+  const preset=(cfg&&cfg.preset)||"legacy";
+  const exInfo=buildExQuestText(s);
+  let bfDesc=t("egg")+" + "+fr[fi];
+  let lnEmoji="🥒",lnTitle=t("lunch"),lnDesc=t("lunch_d");
+  let dnDesc=t("dinner_d");
+  let q14={id:"fs",time:"23:00",emoji:"🌙",title:t("fasting"),desc:t("fasting_d")};
+
+  if(goal==="gain"){
+    bfDesc=lang==="zh"?`鸡蛋2个 + 主食/燕麦 + ${fr[fi]}`:`삶은 계란 2개 + 밥/오트밀 + ${fr[fi]}`;
+    lnEmoji="🍱";
+    lnTitle=lang==="zh"?"能量午餐":"영양 점심";
+    lnDesc=lang==="zh"?"主食1碗 + 充足肉/鱼/豆腐 + 蔬菜":"밥 1공기 + 고기·생선·두부 반찬 + 채소";
+    dnDesc=lang==="zh"?"从下方选择 · 正常米饭+蛋白质":"아래 메뉴 선택 · 밥 1공기+단백질 충분히";
+    q14={id:"fs",time:"21:30",emoji:"🥛",title:lang==="zh"?"加餐/营养确认":"증량 간식·영양 보충",desc:lang==="zh"?"睡前牛奶/豆浆/坚果等健康加餐（无需禁食）":"우유·두유·견과류·계란 등 건강한 간식 챙기기 (금식 없음)"};
+  }else if(goal==="maintain"){
+    bfDesc=lang==="zh"?`均衡早餐（鸡蛋 + ${fr[fi]} + 适量主食）`:`균형 아침 (계란 + ${fr[fi]} + 적정 탄수화물)`;
+    lnEmoji="🍱";
+    lnTitle=lang==="zh"?"均衡午餐":"균형 점심";
+    lnDesc=lang==="zh"?"正常规律午餐（七八分饱）":"규칙적인 일반 점심 식사 (과식 피하기)";
+    dnDesc=lang==="zh"?"从下方分类选择均衡晚餐":"아래 메뉴 중 적정량 균형 저녁";
+    q14={id:"fs",time:"22:30",emoji:"🌿",title:lang==="zh"?"规律作息确认":"규칙적 식습관 확인",desc:lang==="zh"?"避免深夜暴饮暴食，保持良好睡眠":"심야 과식만 피하고 편안하게 휴식"};
+  }else{
+    // loss mode: legacy vs flex
+    if(preset==="flex"){
+      bfDesc=lang==="zh"?`蛋白质早餐（鸡蛋/豆浆 + ${fr[fi]}）`:`단백질 아침 (계란·두유 + ${fr[fi]})`;
+      lnEmoji="🥗";
+      lnTitle=lang==="zh"?"减脂均衡午餐 (温和模式)":"완화된 감량 점심 (일상·매장형)";
+      lnDesc=lang==="zh"?"正常餐饮：先吃菜和肉，米饭减半（无需只吃黄瓜）":"일반 식사: 채소·단백질 먼저, 밥은 반 공기 (오이만 먹을 필요 없음)";
+      q14={id:"fs",time:"22:00",emoji:"🌙",title:lang==="zh"?"夜间控食确认":"야식 줄이기 확인",desc:lang==="zh"?"睡前3小时尽量不吃高热量夜宵":"취침 3시간 전 고칼로리 야식 피하기"};
+    }
+  }
+  return[
+    {id:"w1",time:"07:00",emoji:"💧",title:t("water"),desc:t("water_d")},
+    {id:"wt",time:"07:00",emoji:"⚖️",title:t("weigh"),desc:t("weigh_d")},
+    {id:"ex",time:"07:10",emoji:"🏃",title:exInfo.title,desc:exInfo.desc},
+    {id:"w2",time:"07:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"早餐前30分钟 + 运动后补水":"아침 30분 전 + 운동 후 보충"},
+    {id:"bf",time:"08:00",emoji:"🍳",title:t("breakfast"),desc:bfDesc},
+    {id:"w3",time:"09:30",emoji:"💧",title:t("water"),desc:t("water_d")},
+    {id:"w4",time:"12:00",emoji:"💧",title:t("water"),desc:t("water_d")},
+    {id:"w5",time:"13:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"午餐前30分钟":"점심 30분 전"},
+    {id:"ln",time:"14:00",emoji:lnEmoji,title:lnTitle,desc:lnDesc},
+    {id:"w6",time:"16:00",emoji:"💧",title:t("water"),desc:t("water_d")},
+    {id:"w7",time:"18:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"晚餐前30分钟":"저녁 30분 전"},
+    {id:"dn",time:"19:00",emoji:"🍲",title:t("dinner"),desc:dnDesc},
+    {id:"w8",time:"21:00",emoji:"💧",title:t("water"),desc:t("water_d")},
+    q14
+  ];
+}
 function sdf(date,f,v){if(!data[date])data[date]={};data[date][f]=v;saveD(data);toast((lang==="zh"?"已保存":"저장")+" ✓");render()}
 function calcXP(){let xp=0;Object.entries(data).forEach(([k,v])=>{if(v.quests){const dn=Object.values(v.quests).filter(Boolean).length;xp+=dn*10;if(dn===QT&&!isSun(k))xp+=50}});return xp}
 function toggleQ(date,qid){const d=data[date]||{};const qs=d.quests||{};const was=qsDone(date)===QT;qs[qid]=!qs[qid];if(!data[date])data[date]={};data[date].quests=qs;saveD(data);usr.xp=calcXP();saveU(usr);if(qsDone(date)===QT&&!was){showAnim();return}render()}
@@ -282,18 +512,17 @@ function qsDone(d){const e=data[d]||{};return e.quests?Object.values(e.quests).f
 function getStreak(){if(!cfg)return 0;let s=0,d=new Date(td()+"T00:00:00");while(true){const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;if(ds<cfg.startDate)break;if(isSun(ds)){s++;d.setDate(d.getDate()-1);continue}if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7){s++;d.setDate(d.getDate()-1)}else break}return s}
 function latestW(){const e=Object.entries(data).filter(([,v])=>v.weight).sort((a,b)=>b[0].localeCompare(a[0]));return e.length>0?e[0][1].weight:cfg?cfg.startWeight:0}
 function totalStars(){return Object.entries(data).filter(([k,v])=>v.quests&&Object.values(v.quests).filter(Boolean).length===QT&&!isSun(k)).length}
-function exSets(){if(!cfg)return 7;const w=Math.floor(dBtw(cfg.startDate,td())/7)+1;if(w<=1)return 7;if(w<=2)return 8;if(w<=4)return 10;return 12}
 function getLvl(){let l=0;for(let i=LVLS.length-1;i>=0;i--)if(usr.xp>=LVLS[i]){l=i;break}return l}
 function getLN(l){return lang==="zh"?LN_ZH[l]:LN_KO[l]}
 function getBMI(){if(!cfg||!cfg.height)return 0;const h=cfg.height/100;return(latestW()/(h*h)).toFixed(1)}
 function getWeeklyLoss(){if(!cfg)return 0;const ws=Object.entries(data).filter(([,v])=>v.weight).sort((a,b)=>a[0].localeCompare(b[0]));if(ws.length<2)return 0;const first=ws[0],last=ws[ws.length-1],days=dBtw(first[0],last[0]);if(days<3)return 0;return((first[1].weight-last[1].weight)/days*7).toFixed(1)}
-function getPredictDate(){const rate=parseFloat(getWeeklyLoss());if(rate<=0||!cfg)return lang==="zh"?"--":"--";const toGo=latestW()-cfg.targetWeight;if(toGo<=0)return lang==="zh"?"已达标！":"달성!";const weeks=toGo/rate;const days=Math.ceil(weeks*7);return fmtD(addD(td(),days))}
-function weeklyRate(){if(!cfg)return 0;const wd=dow(td()),start=addD(td(),-wd);let total=0,done=0;for(let i=0;i<7;i++){const ds=addD(start,i);if(ds>td()||ds<cfg.startDate)continue;if(isSun(ds))continue;total++;if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7)done++}return total?Math.round(done/total*100):0}
-function avgRate(){if(!cfg)return 0;const el=dBtw(cfg.startDate,td());let total=0,done=0;for(let i=0;i<=el;i++){const ds=addD(cfg.startDate,i);if(isSun(ds))continue;total++;if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7)done++}return total?Math.round(done/total*100):0}
+function getPredictDate(){const rate=parseFloat(getWeeklyLoss());if(!cfg)return"--";if(cfg.goal==="maintain")return lang==="zh"?"维持中":"유지 중";if(cfg.goal==="gain"){if(rate>=0)return"--";const toGain=cfg.targetWeight-latestW();if(toGain<=0)return lang==="zh"?"已达标！":"달성!";const wks=toGain/Math.abs(rate);return fmtD(addD(td(),Math.ceil(wks*7)))}if(rate<=0)return"--";const toGo=latestW()-cfg.targetWeight;if(toGo<=0)return lang==="zh"?"已达标！":"달성!";const weeks=toGo/rate;const days=Math.ceil(weeks*7);return fmtD(addD(td(),days))}
+function weeklyRate(){if(!cfg)return 0;const wd=dow(td()),start=addD(td(),-wd);let total=0,done=0;for(let i=0;i<7;i++){const ds=addD(start,i);if(ds>td()||ds<cfg.startDate||ds>cfg.endDate)continue;if(isSun(ds))continue;total++;if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7)done++}return total?Math.round(done/total*100):0}
+function avgRate(){if(!cfg)return 0;const lastD=td()<cfg.endDate?td():cfg.endDate;const el=Math.max(0,dBtw(cfg.startDate,lastD));let total=0,done=0;for(let i=0;i<=el;i++){const ds=addD(cfg.startDate,i);if(isSun(ds))continue;total++;if(data[ds]&&data[ds].quests&&Object.values(data[ds].quests).filter(Boolean).length>=7)done++}return total?Math.round(done/total*100):0}
 function nextBadge(){for(const b of BDEFS)if(!b.ck())return lang==="zh"?`${b.icon} ${b.zh} — ${b.cz}`:`${b.icon} ${b.ko} — ${b.ck2}`;return lang==="zh"?"全部解锁！🎉":"전부 해금! 🎉"}
 function ringSvg(pct,sz){const r=sz/2-6,c=2*Math.PI*r,dash=c*pct/100,gap=c-dash;const col=pct>=80?"var(--cy)":pct>=50?"var(--ny)":"var(--np)";return`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="5"/><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-dasharray="${dash} ${gap}" stroke-linecap="round" transform="rotate(-90 ${sz/2} ${sz/2})" style="filter:drop-shadow(0 0 4px ${col})"/></svg>`}
-function buildChart(){if(!cfg)return"";const T=cfg.totalDays,sW=cfg.startWeight,tW=cfg.targetWeight;const entries=Object.entries(data).filter(([,v])=>v.weight).map(([k,v])=>({day:dBtw(cfg.startDate,k),w:v.weight})).filter(e=>e.day>=0).sort((a,b)=>a.day-b.day);if(!entries.length)return`<div class="ech">${t("noData")}</div>`;const W=340,H=155,P=34,ws=entries.map(e=>e.w),mn=Math.min(...ws,tW)-1,mx=Math.max(...ws,sW)+1,xS=d=>P+(d/T)*(W-P*2),yS=w=>P+((mx-w)/(mx-mn))*(H-P*2);let s=`<svg viewBox="0 0 ${W} ${H}" class="csv"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00fff2" stop-opacity="0.15"/><stop offset="100%" stop-color="#00fff2" stop-opacity="0.01"/></linearGradient></defs>`;for(let w=Math.ceil(mn);w<=Math.floor(mx);w+=2)s+=`<line x1="${P}" y1="${yS(w)}" x2="${W-P}" y2="${yS(w)}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/><text x="${P-3}" y="${yS(w)+3}" text-anchor="end" fill="#556" font-size="7" font-family="monospace">${w}</text>`;s+=`<line x1="${P}" y1="${yS(tW)}" x2="${W-P}" y2="${yS(tW)}" stroke="var(--np)" stroke-width="1" stroke-dasharray="4 3" style="filter:drop-shadow(0 0 3px rgba(255,45,123,.3))"/><text x="${W-P+2}" y="${yS(tW)+3}" fill="var(--np)" font-size="7" font-family="monospace">${tW}</text>`;if(entries.length>1){const pts=entries.map(e=>`${xS(e.day)},${yS(e.w)}`).join(" ");s+=`<polygon points="${xS(entries[0].day)},${H-P} ${pts} ${xS(entries[entries.length-1].day)},${H-P}" fill="url(#ag)"/><polyline points="${pts}" fill="none" stroke="var(--cy)" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(0,255,242,.4))"/>`}entries.forEach(e=>{s+=`<circle cx="${xS(e.day)}" cy="${yS(e.w)}" r="3" fill="var(--bg)" stroke="var(--cy)" stroke-width="1.5"/><text x="${xS(e.day)}" y="${yS(e.w)-6}" text-anchor="middle" fill="#ccd" font-size="7" font-weight="600" font-family="monospace">${e.w}</text>`});s+=`<text x="${P}" y="${H-3}" fill="#445" font-size="7" font-family="monospace">${fmtD(cfg.startDate)}</text><text x="${W-P}" y="${H-3}" text-anchor="end" fill="#445" font-size="7" font-family="monospace">${fmtD(cfg.endDate)}</text></svg>`;return s}
-function buildCal(){if(!cfg)return"";const el=dBtw(cfg.startDate,td());const hd=lang==="zh"?["日","一","二","三","四","五","六"]:["일","월","화","수","목","금","토"];let h=`<div class="cal">${hd.map(d=>`<div class="cal-h">${d}</div>`).join("")}`;const sD=new Date(cfg.startDate+"T00:00:00"),mS=new Date(sD.getFullYear(),sD.getMonth(),1),sDow=mS.getDay();for(let i=0;i<sDow;i++)h+=`<div class="cal-d"></div>`;for(let i=0;i<=Math.min(el+14,cfg.totalDays+14);i++){const ds=addD(`${mS.getFullYear()}-${String(mS.getMonth()+1).padStart(2,"0")}-01`,i+mS.getDate()-1);const dm=new Date(ds+"T00:00:00");const dn=dm.getDate();if(ds>addD(td(),14))continue;if(ds<cfg.startDate){h+=`<div class="cal-d c4">${dn}</div>`;continue}if(ds>td()){h+=`<div class="cal-d c4">${dn}</div>`;continue}if(isSun(ds)){h+=`<div class="cal-d cs">${dn}</div>`;continue}const qd=data[ds]&&data[ds].quests?Object.values(data[ds].quests).filter(Boolean).length:0;const p=Math.round(qd/QT*100);h+=`<div class="cal-d ${p>=80?"c1":p>=50?"c2":p>0?"c3":"c4"}">${dn}</div>`}h+=`</div>`;return h}
+function buildChart(){if(!cfg)return"";const T=Math.max(1,cfg.totalDays-1),sW=cfg.startWeight,tW=cfg.targetWeight;const entries=Object.entries(data).filter(([,v])=>v.weight).map(([k,v])=>({day:dBtw(cfg.startDate,k),w:v.weight})).filter(e=>e.day>=0&&e.day<cfg.totalDays).sort((a,b)=>a.day-b.day);if(!entries.length)return`<div class="ech">${t("noData")}</div>`;const W=340,H=155,P=34,ws=entries.map(e=>e.w),mn=Math.min(...ws,tW,sW)-1,mx=Math.max(...ws,sW,tW)+1,xS=d=>P+(d/T)*(W-P*2),yS=w=>P+((mx-w)/(mx-mn))*(H-P*2);let s=`<svg viewBox="0 0 ${W} ${H}" class="csv"><defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00fff2" stop-opacity="0.15"/><stop offset="100%" stop-color="#00fff2" stop-opacity="0.01"/></linearGradient></defs>`;for(let w=Math.ceil(mn);w<=Math.floor(mx);w+=2)s+=`<line x1="${P}" y1="${yS(w)}" x2="${W-P}" y2="${yS(w)}" stroke="rgba(255,255,255,.04)" stroke-width="0.5"/><text x="${P-3}" y="${yS(w)+3}" text-anchor="end" fill="#556" font-size="7" font-family="monospace">${w}</text>`;s+=`<line x1="${P}" y1="${yS(tW)}" x2="${W-P}" y2="${yS(tW)}" stroke="var(--np)" stroke-width="1" stroke-dasharray="4 3" style="filter:drop-shadow(0 0 3px rgba(255,45,123,.3))"/><text x="${W-P+2}" y="${yS(tW)+3}" fill="var(--np)" font-size="7" font-family="monospace">${tW}</text>`;if(entries.length>1){const pts=entries.map(e=>`${xS(e.day)},${yS(e.w)}`).join(" ");s+=`<polygon points="${xS(entries[0].day)},${H-P} ${pts} ${xS(entries[entries.length-1].day)},${H-P}" fill="url(#ag)"/><polyline points="${pts}" fill="none" stroke="var(--cy)" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 0 4px rgba(0,255,242,.4))"/>`}entries.forEach(e=>{s+=`<circle cx="${xS(e.day)}" cy="${yS(e.w)}" r="3" fill="var(--bg)" stroke="var(--cy)" stroke-width="1.5"/><text x="${xS(e.day)}" y="${yS(e.w)-6}" text-anchor="middle" fill="#ccd" font-size="7" font-weight="600" font-family="monospace">${e.w}</text>`});s+=`<text x="${P}" y="${H-3}" fill="#445" font-size="7" font-family="monospace">${fmtD(cfg.startDate)}</text><text x="${W-P}" y="${H-3}" text-anchor="end" fill="#445" font-size="7" font-family="monospace">${fmtD(cfg.endDate)}</text></svg>`;return s}
+function buildCal(){if(!cfg)return"";const hd=lang==="zh"?["日","一","二","三","四","五","六"]:["일","월","화","수","목","금","토"];let h=`<div class="cal">${hd.map(d=>`<div class="cal-h">${d}</div>`).join("")}`;const sDow=dow(cfg.startDate);for(let i=0;i<sDow;i++)h+=`<div class="cal-d"></div>`;for(let i=0;i<cfg.totalDays;i++){const ds=addD(cfg.startDate,i);const dm=new Date(ds+"T00:00:00");const dn=dm.getDate();if(ds>td()){h+=`<div class="cal-d c4" data-date="${ds}">${dn}</div>`;continue}if(isSun(ds)){h+=`<div class="cal-d cs" data-date="${ds}">${dn}</div>`;continue}const qd=data[ds]&&data[ds].quests?Object.values(data[ds].quests).filter(Boolean).length:0;const p=Math.round(qd/QT*100);h+=`<div class="cal-d ${p>=80?"c1":p>=50?"c2":p>0?"c3":"c4"}" data-date="${ds}">${dn}</div>`}h+=`</div>`;return h}
 // ═══ animations & games (same logic, compact) ═══
 function showAnim(){const ov=document.getElementById("overlay");const a=ANIMS[Math.floor(Math.random()*ANIMS.length)];const msg=lang==="zh"?a.mz:a.mk;let sp="";for(let i=0;i<10;i++)sp+=`<div class="sparkle" style="left:${Math.random()*280-40}px;top:${Math.random()*180-40}px;animation-delay:${Math.random()*.5}s">✨</div>`;ov.style.display="flex";ov.innerHTML=`<div style="position:relative;text-align:center">${sp}<div class="anim-char" style="${a.style}">${a.emoji}</div><div class="anim-msg">${msg}</div><div style="margin-top:6px;font-size:11px;color:var(--ny)">+50 XP ⭐</div><button class="game-btn" style="margin-top:16px" onclick="showGameIntro()">${t("playGame")} 🎮</button><button style="background:none;border:none;color:#556;font-size:11px;margin-top:10px;cursor:pointer" onclick="closeOv()">${lang==="zh"?"跳过":"건너뛰기"}</button></div>`;setTimeout(()=>render(),100)}
 function closeOv(){document.getElementById("overlay").style.display="none";render()}
@@ -321,50 +550,578 @@ function dgMv(x){gameData.px=Math.max(20,Math.min(330,x))}
 function initMT(c){const ctx=c.getContext("2d");const em=["🥗","🥚","🥒","🍎","🐔","💧"];let cd=[...em,...em].sort(()=>Math.random()-.5);gameData={cards:cd.map(e=>({e,f:false,m:false})),f:null,s:null,lk:false,p:0};drMT(ctx)}
 function drMT(ctx){ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";ctx.fillRect(0,0,350,450);gameData.cards.forEach((c,i)=>{const x=(i%4)*82+11,y=Math.floor(i/4)*82+20;if(c.m){ctx.fillStyle="rgba(0,255,242,.08)";ctx.fillRect(x,y,72,72);ctx.font="30px serif";ctx.fillText(c.e,x+21,y+50)}else if(c.f){ctx.fillStyle="rgba(191,0,255,.1)";ctx.fillRect(x,y,72,72);ctx.font="30px serif";ctx.fillText(c.e,x+21,y+50)}else{ctx.fillStyle="rgba(255,255,255,.04)";ctx.fillRect(x,y,72,72);ctx.font="22px serif";ctx.fillText("❓",x+25,y+47)}})}
 function mtTap(x,y){const g=gameData;if(g.lk)return;const i=Math.floor((x-11)/82)+Math.floor((y-20)/82)*4;if(i<0||i>=12)return;const c=g.cards[i];if(!c||c.f||c.m)return;c.f=true;const ctx=document.getElementById("gc").getContext("2d");drMT(ctx);if(g.f===null)g.f=i;else{g.s=i;g.lk=true;setTimeout(()=>{if(g.cards[g.f].e===g.cards[g.s].e){g.cards[g.f].m=true;g.cards[g.s].m=true;gameScore+=20;g.p++;if(g.p===6){gameActive=false;clearInterval(gameLoop);if(!data[td()])data[td()]={};data[td()].gamePlayed=true;saveD(data);document.getElementById("overlay").innerHTML=`<div style="text-align:center"><div style="font-size:48px;filter:drop-shadow(0 0 20px rgba(0,255,242,.5))">🎉</div><div style="font-size:18px;font-weight:800;color:var(--cy);margin-top:10px">${lang==="zh"?"配对成功！":"매칭 성공!"}</div><div style="font-size:14px;color:var(--ny);margin-top:6px">${t("score")}: ${gameScore}</div><button class="game-btn" style="margin-top:16px" onclick="closeOv()">${lang==="zh"?"关闭":"닫기"}</button></div>`;return}}else{g.cards[g.f].f=false;g.cards[g.s].f=false;loseLife()}g.f=null;g.s=null;g.lk=false;drMT(ctx);updHud()},600)}}
+// ═══ STEP 2: JSON BACKUP ═══
+function getExportObject(){
+  return{
+    b60lang:lang,
+    burn60_config:cfg,
+    burn60_data:data,
+    burn60_user:usr
+  };
+}
+function exportBackup(){
+  const payload=getExportObject();
+  const json=JSON.stringify(payload,null,2);
+  const blob=new Blob([json],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  const dStr=td().replace(/-/g,"");
+  a.href=url;
+  a.download=`burn60_backup_${dStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),500);
+  toast(lang==="zh"?"已导出备份 ✓":"백업 내보내기 완료 ✓");
+  return payload;
+}
+function validateBackupObj(obj){
+  if(!obj||typeof obj!=="object"||Array.isArray(obj))return false;
+  const reqKeys=["b60lang","burn60_config","burn60_data","burn60_user"];
+  for(const k of reqKeys){if(!(k in obj))return false}
+  if(typeof obj.b60lang!=="string"||(obj.b60lang!=="ko"&&obj.b60lang!=="zh"))return false;
+  if(obj.burn60_config!==null){
+    if(typeof obj.burn60_config!=="object"||Array.isArray(obj.burn60_config))return false;
+    if(!obj.burn60_config.startDate||!obj.burn60_config.totalDays||!obj.burn60_config.startWeight)return false;
+  }
+  if(!obj.burn60_data||typeof obj.burn60_data!=="object"||Array.isArray(obj.burn60_data))return false;
+  if(!obj.burn60_user||typeof obj.burn60_user!=="object"||Array.isArray(obj.burn60_user)||typeof obj.burn60_user.xp!=="number")return false;
+  return true;
+}
+function applyBackupObject(rawInput,skipConfirm){
+  let obj=rawInput;
+  if(typeof rawInput==="string"){
+    try{obj=JSON.parse(rawInput)}catch(e){toast(lang==="zh"?"无效的JSON文件":"유효하지 않은 JSON 파일");return false}
+  }
+  if(!validateBackupObj(obj)){
+    toast(lang==="zh"?"备份文件格式错误":"백업 파일 구조가 올바르지 않습니다");
+    return false;
+  }
+  if(!skipConfirm){
+    const ok=confirm(lang==="zh"?"导入备份将覆盖当前数据，确定继续？":"백업을 가져오면 현재 데이터를 덮어씁니다. 계속할까요?");
+    if(!ok)return false;
+  }
+  lang=obj.b60lang;
+  try{localStorage.setItem("b60lang",lang)}catch(e){}
+  if(obj.burn60_config){
+    cfg=Object.assign({},obj.burn60_config,{schemaVersion:2});
+    saveC(cfg);
+  }else{
+    cfg=null;
+    try{localStorage.removeItem(CK)}catch(e){}
+  }
+  data=obj.burn60_data;
+  saveD(data);
+  usr=obj.burn60_user;
+  saveU(usr);
+  syncDocLang();
+  render();
+  toast(lang==="zh"?"备份导入成功 ✓":"백업 가져오기 완료 ✓");
+  return true;
+}
+function triggerImport(){
+  const inp=document.getElementById("import-file-input");
+  if(inp)inp.click();
+}
+function handleImportFile(ev){
+  const file=ev.target&&ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    applyBackupObject(e.target.result,false);
+    ev.target.value="";
+  };
+  reader.readAsText(file);
+}
+
+// ═══ STEP 4: COACH ONBOARDING STATE & UI ═══
+let obStep=1;
+function defaultOb(){
+  return{
+    goal:"loss",
+    muscle:false,
+    days:60,
+    sex:"",
+    age:"",
+    height:"",
+    startWeight:"",
+    targetWeight:"",
+    med:"",
+    medAck:false,
+    pains:["none"],
+    preg:"",
+    ed:"",
+    workType:"standing",
+    mealType:"out",
+    allergy:"none",
+    allergyMemo:"",
+    exTime:"10",
+    exPlace:"shop",
+    preset:"flex",
+    presetTouched:false,
+    sleep:"normal",
+    budget:"mid",
+    cuisine:"ko",
+    exp:"beginner",
+    motive:""
+  };
+}
+let ob=defaultOb();
+function fmtIn(v){return(v===undefined||v===null||v===""||Number.isNaN(v))?"":String(v)}
+function syncObInputs(){
+  const dEl=document.getElementById("s-d");
+  if(dEl){
+    const raw=dEl.value.trim();
+    if(raw===""){ob.days="";}
+    else{const v=parseInt(raw,10);ob.days=Number.isNaN(v)?"":v;}
+  }
+  const aEl=document.getElementById("s-age");
+  if(aEl){
+    const raw=aEl.value.trim();
+    if(raw===""){ob.age="";}
+    else{const v=parseInt(raw,10);ob.age=Number.isNaN(v)?"":v;}
+  }
+  const hEl=document.getElementById("s-ht");
+  if(hEl){
+    const raw=hEl.value.trim();
+    if(raw===""){ob.height="";}
+    else{const v=parseFloat(raw);ob.height=Number.isNaN(v)?"":v;}
+  }
+  const swEl=document.getElementById("s-sw");
+  if(swEl){
+    const raw=swEl.value.trim();
+    if(raw===""){ob.startWeight="";}
+    else{const v=parseFloat(raw);ob.startWeight=Number.isNaN(v)?"":v;}
+    if(ob.goal==="maintain")ob.targetWeight=ob.startWeight;
+  }
+  const twEl=document.getElementById("s-tw");
+  if(twEl){
+    if(ob.goal==="maintain"){ob.targetWeight=ob.startWeight;}
+    else{
+      const raw=twEl.value.trim();
+      if(raw===""){ob.targetWeight="";}
+      else{const v=parseFloat(raw);ob.targetWeight=Number.isNaN(v)?"":v;}
+    }
+  }
+  const alEl=document.getElementById("s-allergy-memo");if(alEl)ob.allergyMemo=alEl.value;
+  const moEl=document.getElementById("s-motive");if(moEl)ob.motive=moEl.value;
+}
+function setObGoal(g){
+  syncObInputs();
+  ob.goal=g;
+  if(g==="maintain")ob.targetWeight=ob.startWeight;
+  render();
+}
+function setObDays(d){
+  syncObInputs();
+  ob.days=d;
+  render();
+}
+function setObField(k,v){
+  syncObInputs();
+  ob[k]=v;
+  if(k==="mealType"&&!ob.presetTouched){
+    ob.preset=(v==="out"||v==="fam"||v==="deliv")?"flex":"legacy";
+  }
+  if(k==="preset")ob.presetTouched=true;
+  if(k==="sex"){
+    ob.preg="";
+  }
+  if(k==="med"&&v==="none"){
+    ob.medAck=false;
+  }
+  render();
+}
+function toggleObPain(p){
+  syncObInputs();
+  if(p==="none"){ob.pains=["none"];render();return}
+  let arr=ob.pains.filter(x=>x!=="none");
+  if(arr.includes(p))arr=arr.filter(x=>x!==p);
+  else arr.push(p);
+  if(!arr.length)arr=["none"];
+  ob.pains=arr;
+  render();
+}
+function obNext(){
+  syncObInputs();
+  if(obStep===1){
+    if(!ob.days||ob.days<7||ob.days>180){toast(lang==="zh"?"挑战天数需在 7~180 天之间":"기간은 7~180일 사이로 설정하세요");return}
+  }
+  if(obStep===2){
+    const chk=checkBodyAndRate(Object.assign({},ob,{totalDays:ob.days}));
+    if(!chk.ok){toast(chk.reason);return}
+  }
+  if(obStep===3){
+    if(ob.sex==="f"&&ob.preg==="yes"){toast(lang==="zh"?"孕期/哺乳期无法开始挑战":"임신·수유 중에는 시작할 수 없습니다");return}
+    if(ob.ed==="high"){toast(lang==="zh"?"高风险进食障碍请咨询医生":"섭식장애 고위험군은 시작할 수 없습니다");return}
+    if(!ob.med){toast(lang==="zh"?"请选择慢性疾病或服药情况":"질환·복용 중인 약 문항을 선택해주세요");return}
+    if(ob.med!=="none"&&!ob.medAck){toast(lang==="zh"?"请勾选已与医生沟通确认":"'의사와 상의 후 진행'에 체크해주세요");return}
+    if(ob.sex==="f"&&!ob.preg){toast(lang==="zh"?"请选择是否处于孕期或哺乳期":"임신·수유 여부를 선택해주세요");return}
+    if(!ob.ed){toast(lang==="zh"?"请选择进食障碍经历情况":"섭식장애 경험 문항을 선택해주세요");return}
+  }
+  if(obStep<5){obStep++;render()}
+}
+function obPrev(){
+  syncObInputs();
+  if(obStep>1){obStep--;render()}
+}
+function obSkipOptional(){
+  syncObInputs();
+  startC();
+}
+function hasValidBodyForTdee(p){
+  if(!p||typeof p!=="object")return false;
+  if(p.sex!=="m"&&p.sex!=="f")return false;
+  if(p.age===""||p.age===null||p.age===undefined||p.height===""||p.height===null||p.height===undefined||p.startWeight===""||p.startWeight===null||p.startWeight===undefined)return false;
+  const sw=Number(p.startWeight),ht=Number(p.height),age=Number(p.age);
+  if(!sw||sw<30||sw>300||!ht||ht<100||ht>250||!age||age<15||age>100)return false;
+  return true;
+}
+function renderStep2Dynamic(){
+  const z=lang==="zh";
+  const showTdee=hasValidBodyForTdee(ob);
+  const rawTw=ob.goal==="maintain"?ob.startWeight:ob.targetWeight;
+  const twNum=(rawTw===""||rawTw===null||rawTw===undefined)?NaN:Number(rawTw);
+  const twValid=!!(twNum&&twNum>=30&&twNum<=300);
+  const cal=showTdee?calcCaloriePlan(ob):null;
+  const rate=(showTdee&&twValid)?calcWeeklyRate(ob.startWeight,twNum,ob.days):0;
+  const guard=checkBodyAndRate(Object.assign({},ob,{totalDays:ob.days}));
+  let h="";
+  if(showTdee&&cal){
+    h+=`<div class="tdee-box" data-testid="tdee-preview">
+      <div>⚡ <b>BMR</b>: <span data-testid="val-bmr">${cal.bmrRound.toLocaleString()}</span> kcal · <b>TDEE</b>: <span data-testid="val-tdee">${cal.tdeeRound.toLocaleString()}</span> kcal</div>
+      <div>🍽️ <b>${z?"建议每日摄入":"권장 일일 섭취량"}</b>: <span data-testid="val-reccal">${cal.recMin.toLocaleString()}~${cal.recMax.toLocaleString()}</span> kcal</div>
+      ${cal.clamped?`<div style="color:var(--ny);font-size:10px;margin-top:2px">* ${z?`已应用安全下限 (${cal.floor} kcal)`:`안전 하한선(${cal.floor.toLocaleString()} kcal)으로 보정됨`}</div>`:""}
+      ${(ob.goal==="loss"&&twValid)?`<div style="font-size:10px;color:#889;margin-top:2px">${z?"预计周减重速度":"예상 주당 감량 속도"}: <b>${rate.toFixed(2)} kg/${z?"周":"주"}</b></div>`:""}
+    </div>`;
+  }
+  if(!guard.ok&&(guard.code==="underweight"||guard.code==="loss_dir"||guard.code==="gain_dir"||guard.code==="rate_over_2"||guard.code==="rate_over_1"||guard.code==="gain_rate")){
+    h+=`<div class="${guard.warn?"ob-warn":"ob-stop"}" data-testid="guard-msg">
+      <div>${guard.reason}</div>
+      ${(guard.code==="loss_dir")?`<button type="button" class="ob-btn2" style="margin-top:6px" data-testid="btn-switch-gain" onclick="setObGoal('gain')">${z?"切换为增重模式":"증량 모드로 전환"}</button>`:""}
+      ${(guard.code==="gain_dir")?`<button type="button" class="ob-btn2" style="margin-top:6px" data-testid="btn-switch-loss" onclick="setObGoal('loss')">${z?"切换为减重模式":"감량 모드로 전환"}</button>`:""}
+    </div>`;
+  }
+  return h;
+}
+function onStep2Input(){
+  syncObInputs();
+  if(ob.goal==="maintain"){
+    const twEl=document.getElementById("s-tw");
+    if(twEl)twEl.value=fmtIn(ob.startWeight);
+  }
+  const dyn=document.getElementById("ob-step2-dyn");
+  if(dyn)dyn.innerHTML=renderStep2Dynamic();
+  else render();
+}
+function renderOnboarding(){
+  const z=lang==="zh";
+  let stepHtml="";
+
+  if(obStep===1){
+    stepHtml=`
+      <div class="gc" data-testid="q-goal">
+        <div class="ob-step"><span>STEP 1 / 5 · ${z?"目标与周期":"목적 및 기간"}</span></div>
+        <div class="ob-q">1. ${z?"您的主要目标是什么？":"이번 도전의 목적은 무엇인가요?"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.goal==="loss"?"on":""}" data-testid="opt-loss" onclick="setObGoal('loss')">🔥 ${z?"减重 (감량)":"감량"}</button>
+          <button type="button" class="ob-opt ${ob.goal==="gain"?"on":""}" data-testid="opt-gain" onclick="setObGoal('gain')">💪 ${z?"增重 (증량)":"증량"}</button>
+          <button type="button" class="ob-opt ${ob.goal==="maintain"?"on":""}" data-testid="opt-maintain" onclick="setObGoal('maintain')">⚖️ ${z?"维持 (유지)":"유지"}</button>
+        </div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.muscle?"on":""}" data-testid="opt-muscle" onclick="setObField('muscle',!ob.muscle)">🏋️ ${z?"同时强化肌肉 (+组数)":"근육 강화 옵션 함께 켜기"}</button>
+        </div>
+        <div class="ob-q" style="margin-top:10px" data-testid="q-days">2. ${z?"挑战天数 (7~180天)":"도전 기간 (7~180일)"}</div>
+        <div class="ob-opts">
+          ${[7,14,30,60,90].map(d=>`<button type="button" class="ob-opt ${ob.days===d?"on":""}" data-testid="btn-days-${d}" onclick="setObDays(${d})">${d}${t("day")}</button>`).join("")}
+        </div>
+        <div class="sf" style="margin-bottom:6px">
+          <label class="sl" for="s-d">${z?"自定义天数 (7~180)":"직접 입력 (7~180일)"}</label>
+          <input class="si" type="number" min="7" max="180" id="s-d" data-testid="input-days" value="${fmtIn(ob.days)}" oninput="syncObInputs()" onchange="syncObInputs();render()">
+        </div>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="sbtn" style="margin-top:0" data-testid="btn-next" onclick="obNext()">${z?"下一步 →":"다음 →"}</button>
+      </div>`;
+  }else if(obStep===2){
+    stepHtml=`
+      <div class="gc" data-testid="q-body">
+        <div class="ob-step"><span>STEP 2 / 5 · ${z?"身体数据与热量计算":"신체 정보 및 TDEE 계산"}</span></div>
+        <div class="ob-q" data-testid="q-sex">3. ${z?"生理性别 (用于BMR计算)":"성별 (기초대사량 계산용)"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.sex==="m"?"on":""}" data-testid="opt-sex-m" onclick="setObField('sex','m')">👨 ${z?"男性":"남성"}</button>
+          <button type="button" class="ob-opt ${ob.sex==="f"?"on":""}" data-testid="opt-sex-f" onclick="setObField('sex','f')">👩 ${z?"女性":"여성"}</button>
+        </div>
+        <div class="sr">
+          <div class="sf"><label class="sl" for="s-age">4. ${z?"年龄 (岁)":"나이 (세)"}</label><input class="si" type="number" id="s-age" data-testid="input-age" value="${fmtIn(ob.age)}" oninput="onStep2Input()" onchange="onStep2Input()"></div>
+          <div class="sf"><label class="sl" for="s-ht">${t("height")} (cm)</label><input class="si" type="number" id="s-ht" data-testid="input-height" value="${fmtIn(ob.height)}" oninput="onStep2Input()" onchange="onStep2Input()"></div>
+        </div>
+        <div class="sr">
+          <div class="sf"><label class="sl" for="s-sw">${t("curW")} (kg)</label><input class="si" type="number" step="0.1" id="s-sw" data-testid="input-sw" value="${fmtIn(ob.startWeight)}" oninput="onStep2Input()" onchange="onStep2Input()"></div>
+          <div class="sf"><label class="sl" for="s-tw">5. ${t("goalW")} (kg)</label><input class="si" type="number" step="0.1" id="s-tw" data-testid="input-tw" value="${fmtIn(ob.goal==="maintain"?ob.startWeight:ob.targetWeight)}" ${ob.goal==="maintain"?"readonly":""} oninput="onStep2Input()" onchange="onStep2Input()"></div>
+        </div>
+        <div id="ob-step2-dyn">${renderStep2Dynamic()}</div>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="ob-btn2" data-testid="btn-prev" onclick="obPrev()">← ${z?"上一步":"이전"}</button>
+        <button type="button" class="sbtn" style="margin-top:0;flex:2" data-testid="btn-next" onclick="obNext()">${z?"下一步 →":"다음 →"}</button>
+      </div>`;
+  }else if(obStep===3){
+    const isStop=(ob.sex==="f"&&ob.preg==="yes")||ob.ed==="high";
+    stepHtml=`
+      <div class="gc" data-testid="q-safety">
+        <div class="ob-step"><span>STEP 3 / 5 · ${z?"健康与安全筛查":"건강 및 안전 체크"}</span></div>
+        <div class="ob-q" data-testid="q-med">6. ${z?"慢性疾病或正在服药":"질환·복용 중인 약"}</div>
+        <div class="ob-opts">
+          ${[["none",z?"无":"없음"],["bp",z?"高血压/心脏":"고혈압·심장"],["dm",z?"糖尿病":"당뇨"],["kid",z?"肾脏疾病":"신장"],["etc",z?"其他":"기타"]].map(([k,l])=>`<button type="button" class="ob-opt ${ob.med===k?"on":""}" data-testid="opt-med-${k}" onclick="setObField('med','${k}')">${l}</button>`).join("")}
+        </div>
+        ${(ob.med&&ob.med!=="none")?`<div class="ob-warn"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" data-testid="chk-med-ack" ${ob.medAck?"checked":""} onchange="setObField('medAck',this.checked)"><span>${z?"我已咨询医生并确认可以执行饮食与运动计划":"의사와 상의 후 진행함을 확인합니다"}</span></label></div>`:""}
+        <div class="ob-q" data-testid="q-pain">7. ${z?"关节疼痛或损伤（可多选，自动替换动作）":"통증·부상 부위 (복수 선택 가능, 맞춤 운동 대체)"}</div>
+        <div class="ob-opts">
+          ${[["none",z?"无":"없음"],["knee",z?"膝盖":"무릎"],["back",z?"腰部":"허리"],["wrist",z?"手腕/肩膀":"손목·어깨"],["ankle",z?"脚踝":"발목"]].map(([k,l])=>`<button type="button" class="ob-opt ${ob.pains.includes(k)?"on":""}" data-testid="opt-pain-${k}" onclick="toggleObPain('${k}')">${l}</button>`).join("")}
+        </div>
+        ${ob.sex==="f"?`
+          <div class="ob-q" data-testid="q-preg">8. ${z?"是否处于孕期或哺乳期？":"임신 또는 수유 중이신가요?"}</div>
+          <div class="ob-opts">
+            <button type="button" class="ob-opt ${ob.preg==="no"?"on":""}" data-testid="opt-preg-no" onclick="setObField('preg','no')">${z?"否":"아니오"}</button>
+            <button type="button" class="ob-opt ${ob.preg==="yes"?"on":""}" data-testid="opt-preg-yes" onclick="setObField('preg','yes')">${z?"是":"예"}</button>
+          </div>`:""}
+        <div class="ob-q" data-testid="q-ed">9. ${z?"极端节食或暴食（进食障碍）经历":"섭식장애(극단 절식·폭식) 경험"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.ed==="none"?"on":""}" data-testid="opt-ed-none" onclick="setObField('ed','none')">${z?"无":"없음"}</button>
+          <button type="button" class="ob-opt ${ob.ed==="low"?"on":""}" data-testid="opt-ed-low" onclick="setObField('ed','low')">${z?"偶尔":"가끔 있음"}</button>
+          <button type="button" class="ob-opt ${ob.ed==="high"?"on":""}" data-testid="opt-ed-high" onclick="setObField('ed','high')">${z?"经常 (高风险)":"자주 있음 (고위험)"}</button>
+        </div>
+        ${isStop?`<div class="ob-stop" data-testid="safety-stop">🛑 ${ob.preg==="yes"?(z?"孕期或哺乳期不建议使用本挑战，请立即停止并咨询产科/专科医生。":"임신·수유 중에는 도전을 시작할 수 없습니다. 사용을 멈추고 전문의와 상담하세요."):(z?"存在进食障碍高风险，请停止使用饮食限制应用并咨询专业医生。":"섭식장애 고위험군으로 도전을 시작할 수 없습니다. 식단 제한을 멈추고 전문의 상담을 받으세요.")}</div>`:""}
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="ob-btn2" data-testid="btn-prev" onclick="obPrev()">← ${z?"上一步":"이전"}</button>
+        ${!isStop?`<button type="button" class="sbtn" style="margin-top:0;flex:2" data-testid="btn-next" onclick="obNext()">${z?"下一步 →":"다음 →"}</button>`:""}
+      </div>`;
+  }else if(obStep===4){
+    stepHtml=`
+      <div class="gc" data-testid="q-lifestyle">
+        <div class="ob-step"><span>STEP 4 / 5 · ${z?"工作、饮食与运动环境":"생활·식사·운동 환경"}</span></div>
+        <div class="ob-q" data-testid="q-work">10. ${z?"日常工作/活动形态":"근무·활동 형태"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.workType==="sedentary"?"on":""}" data-testid="opt-work-sed" onclick="setObField('workType','sedentary')">🪑 ${z?"久坐办公 (1.2)":"좌식 (1.2)"}</button>
+          <button type="button" class="ob-opt ${ob.workType==="standing"?"on":""}" data-testid="opt-work-stand" onclick="setObField('workType','standing')">🏪 ${z?"长时间站立/门店 (1.55)":"오래 서서 움직임·매장 (1.55)"}</button>
+          <button type="button" class="ob-opt ${ob.workType==="labor"?"on":""}" data-testid="opt-work-labor" onclick="setObField('workType','labor')">⚒️ ${z?"体力劳动 (1.725)":"육체노동 (1.725)"}</button>
+        </div>
+        <div class="ob-q" data-testid="q-meal">11. ${z?"平时如何解决三餐？":"식사 해결 방식"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.mealType==="out"?"on":""}" data-testid="opt-meal-out" onclick="setObField('mealType','out')">🍜 ${z?"门店/外食":"매장·외식"}</button>
+          <button type="button" class="ob-opt ${ob.mealType==="cook"?"on":""}" data-testid="opt-meal-cook" onclick="setObField('mealType','cook')">🍳 ${z?"自己做饭":"직접 요리"}</button>
+          <button type="button" class="ob-opt ${ob.mealType==="deliv"?"on":""}" data-testid="opt-meal-deliv" onclick="setObField('mealType','deliv')">🛵 ${z?"外卖/便利店":"배달·편의점"}</button>
+          <button type="button" class="ob-opt ${ob.mealType==="fam"?"on":""}" data-testid="opt-meal-fam" onclick="setObField('mealType','fam')">👨‍👩‍👧 ${z?"与家人同吃":"가족 식사 병행"}</button>
+        </div>
+        <div class="ob-q" data-testid="q-allergy">12. ${z?"过敏或忌口食物":"알러지·못 먹는 음식"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.allergy==="none"?"on":""}" data-testid="opt-allergy-none" onclick="setObField('allergy','none')">${z?"无":"없음"}</button>
+          <button type="button" class="ob-opt ${ob.allergy==="yes"?"on":""}" data-testid="opt-allergy-yes" onclick="setObField('allergy','yes')">${z?"有 (备注)":"있음 + 메모"}</button>
+        </div>
+        ${ob.allergy==="yes"?`<div class="sf"><label class="sl" for="s-allergy-memo">${z?"忌口备注":"알러지·기피 음식 메모"}</label><input class="si" style="font-size:13px" type="text" id="s-allergy-memo" data-testid="input-allergy" value="${ob.allergyMemo}" placeholder="${z?"例如：海鲜、乳糖":"예: 갑각류, 우유"}"></div>`:""}
+        <div class="ob-q" data-testid="q-extime">13. ${z?"每天可运动时间":"하루 운동 가능 시간"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.exTime==="10"?"on":""}" data-testid="opt-extime-10" onclick="setObField('exTime','10')">⏱️ ${z?"5~10分钟碎片":"5~10분 쪼개기"}</button>
+          <button type="button" class="ob-opt ${ob.exTime==="20"?"on":""}" data-testid="opt-extime-20" onclick="setObField('exTime','20')">⏱️ ${z?"15~20分钟":"15~20분"}</button>
+          <button type="button" class="ob-opt ${ob.exTime==="30"?"on":""}" data-testid="opt-extime-30" onclick="setObField('exTime','30')">⏱️ ${z?"30分钟以上":"30분 이상"}</button>
+        </div>
+        <div class="ob-q" data-testid="q-explace">14. ${z?"运动场所与器材":"운동 장소·기구"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.exPlace==="shop"?"on":""}" data-testid="opt-explace-shop" onclick="setObField('exPlace','shop')">🏢 ${z?"门店空隙(墙/楼梯)":"매장 틈새(벽·계단)"}</button>
+          <button type="button" class="ob-opt ${ob.exPlace==="home"?"on":""}" data-testid="opt-explace-home" onclick="setObField('exPlace','home')">🏠 ${z?"家里":"집"}</button>
+          <button type="button" class="ob-opt ${ob.exPlace==="out"?"on":""}" data-testid="opt-explace-out" onclick="setObField('exPlace','out')">🌳 ${z?"户外":"야외"}</button>
+        </div>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="ob-btn2" data-testid="btn-prev" onclick="obPrev()">← ${z?"上一步":"이전"}</button>
+        <button type="button" class="ob-btn2" data-testid="btn-later" onclick="obSkipOptional()">${z?"跳过选填直接开始":"선택 문항 나중에 (바로 시작)"}</button>
+        <button type="button" class="sbtn" style="margin-top:0;flex:1.4" data-testid="btn-next" onclick="obNext()">${z?"选填设置 →":"선택 문항 →"}</button>
+      </div>`;
+  }else{
+    stepHtml=`
+      <div class="gc" data-testid="q-optional">
+        <div class="ob-step"><span>STEP 5 / 5 · ${z?"选填偏好与模式方案 (可跳过)":"선택 문항 및 루틴 프리셋 (건너뛰기 가능)"}</span><button type="button" class="lang-btn" data-testid="btn-later" onclick="obSkipOptional()">${z?"稍后 (直接开始)":"나중에 (바로 시작)"}</button></div>
+        ${ob.goal==="loss"?`
+          <div class="ob-q" data-testid="q-preset">★ ${z?"选择减脂日常方案":"감량 루틴 프리셋 선택"}</div>
+          <div class="ob-opts">
+            <button type="button" class="ob-opt ${ob.preset==="flex"?"on":""}" data-testid="opt-preset-flex" onclick="setObField('preset','flex')">🥗 ${z?"温和日常方案 (门店/家庭餐友好，不强制黄瓜/禁食)":"완화된 감량 루틴 (매장·가족식사 병행, 오이·금식 강요 없음)"}</button>
+            <button type="button" class="ob-opt ${ob.preset==="legacy"?"on":""}" data-testid="opt-preset-legacy" onclick="setObField('preset','legacy')">🔥 ${z?"经典严格方案 (原版：黄瓜鸡蛋午餐 + 20点后禁食)":"기존 루틴 (오이+계란 점심 · 20시 이후 물/차만)"}</button>
+          </div>`:""}
+        <div class="ob-q">${z?"睡眠时间":"수면 패턴"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.sleep==="short"?"on":""}" onclick="setObField('sleep','short')">${z?"< 6小时":"6시간 미만"}</button>
+          <button type="button" class="ob-opt ${ob.sleep==="normal"?"on":""}" onclick="setObField('sleep','normal')">${z?"6~8小时":"6~8시간"}</button>
+        </div>
+        <div class="ob-q">${z?"饮食预算与家常菜偏好":"식비 예산 및 한식/중식 가정식 선호"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.cuisine==="ko"?"on":""}" onclick="setObField('cuisine','ko')">🍚 ${z?"韩式家常":"한식 가정식"}</button>
+          <button type="button" class="ob-opt ${ob.cuisine==="zh"?"on":""}" onclick="setObField('cuisine','zh')">🥟 ${z?"中式家常":"중식 가정식"}</button>
+        </div>
+        <div class="ob-q">${z?"运动经验":"운동 경험"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.exp==="beginner"?"on":""}" onclick="setObField('exp','beginner')">${z?"新手":"초보"}</button>
+          <button type="button" class="ob-opt ${ob.exp==="inter"?"on":""}" onclick="setObField('exp','inter')">${z?"有基础":"경험 있음"}</button>
+        </div>
+        <div class="sf"><label class="sl" for="s-motive">${z?"过去尝试 / 本次动力":"과거 시도·이번 동기 (선택)"}</label><input class="si" style="font-size:13px" type="text" id="s-motive" value="${ob.motive}" placeholder="${z?"写下你的目标动力":"이번에 꼭 달성하고 싶은 이유"}"></div>
+      </div>
+      <div class="ob-nav">
+        <button type="button" class="ob-btn2" data-testid="btn-prev" onclick="obPrev()">← ${z?"上一步":"이전"}</button>
+        <button type="button" class="sbtn" style="margin-top:0;flex:2" data-testid="btn-start" onclick="startC()">${t("start")}</button>
+      </div>`;
+  }
+
+  return`<div class="setup" style="justify-content:flex-start;padding:20px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px">🔥</span><span class="setup-title" style="font-size:20px;margin:0">${t("appTitle")}</span></div>
+      <button type="button" class="lang-btn" data-testid="btn-lang" onclick="toggleLang()">${lang==="zh"?"한국어":"中文"}</button>
+    </div>
+    ${stepHtml}
+    <div class="disc" data-testid="disclaimer-setup">⚠️ ${t("disclaimer")}</div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button type="button" class="ebtn" style="margin:0" data-testid="btn-import" onclick="triggerImport()">${t("importBtn")}</button>
+      <input type="file" id="import-file-input" data-testid="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">
+    </div>
+    <div class="shint">${t("dataHint")}</div>
+  </div>`;
+}
+
 // ═══ RENDER ═══
 function render(){const app=document.getElementById("app");
-if(!cfg){app.innerHTML=`<div class="setup"><div class="setup-logo">🔥</div><div class="setup-title">${lang==="zh"?"燃脂挑战":"번지 챌린지"}</div><div class="setup-sub">${lang==="zh"?"设置目标，开始挑战":"목표 설정, 도전 시작"}</div><div style="text-align:right;margin-bottom:10px"><button class="lang-btn" onclick="toggleLang()">${lang==="zh"?"한국어":"中文"}</button></div><div class="sf"><label class="sl">${t("curW")} (kg)</label><input class="si" type="number" step="0.1" id="s-sw" placeholder="81.0"></div><div class="sr"><div class="sf"><label class="sl">${t("goalW")} (kg)</label><input class="si" type="number" step="0.1" id="s-tw" placeholder="70.0"></div><div class="sf"><label class="sl">${t("height")} (cm)</label><input class="si" type="number" id="s-ht" placeholder="170"></div></div><div class="sf"><label class="sl">${t("days")} (max 180)</label><input class="si" type="number" id="s-d" placeholder="60" value="60"><div class="su">${t("day")}</div></div><button class="sbtn" onclick="startC()">${t("start")}</button><div class="shint">${t("dataHint")}</div></div>`;return}
-const today2=td(),tD=data[today2]||{},el=Math.max(0,dBtw(cfg.startDate,today2)),left=Math.max(0,dBtw(today2,cfg.endDate)),pct=Math.min(100,Math.round(el/cfg.totalDays*100)),lw=latestW(),lost=cfg.startWeight-lw,toGo=lw-cfg.targetWeight,streak=getStreak(),sun=isSun(today2),qDn=qsDone(today2),qPct=sun?100:Math.round(qDn/QT*100),lvl=getLvl(),nxXp=LVLS[Math.min(lvl+1,LVLS.length-1)],xpP=lvl<LVLS.length-1?Math.round((usr.xp-LVLS[lvl])/(nxXp-LVLS[lvl])*100):100;
-let nav=`<div class="bnav">`;[["quest","⚔️",t("quest")],["weight","⚖️",t("weight")],["history","📅",t("history")],["stats","🏅",t("stats")]].forEach(([k,ic,l])=>{nav+=`<button class="${curView===k?"act":""}" onclick="curView='${k}';render()"><span class="ni">${ic}</span>${l}</button>`});nav+=`</div>`;
+if(!cfg){app.innerHTML=renderOnboarding();return}
+const today2=td(),tD=data[today2]||{},rawEl=dBtw(cfg.startDate,today2),el=Math.max(0,Math.min(cfg.totalDays-1,rawEl)),left=Math.max(0,dBtw(today2,cfg.endDate)),pct=Math.min(100,Math.round(((el+1)/cfg.totalDays)*100)),lw=latestW(),diffW=lw-cfg.startWeight,toGo=Math.abs(cfg.targetWeight-lw),streak=getStreak(),sun=isSun(today2),qDn=qsDone(today2),qPct=sun?100:Math.round(qDn/QT*100),lvl=getLvl(),nxXp=LVLS[Math.min(lvl+1,LVLS.length-1)],xpP=lvl<LVLS.length-1?Math.round((usr.xp-LVLS[lvl])/(nxXp-LVLS[lvl])*100):100;
+const calInfo=calcCaloriePlan(cfg);
+let nav=`<div class="bnav">`;[["quest","⚔️",t("quest")],["weight","⚖️",t("weight")],["history","📅",t("history")],["stats","🏅",t("stats")]].forEach(([k,ic,l])=>{nav+=`<button class="${curView===k?"act":""}" data-testid="nav-${k}" onclick="curView='${k}';render()"><span class="ni">${ic}</span>${l}</button>`});nav+=`</div>`;
 let b="";
 // ═══ QUEST ═══
 if(curView==="quest"){
 if(sun){b=`<div class="rest"><div class="re">😴</div><div class="rt">${t("rest")}</div><div class="rs">${t("restSub").replace(/\n/g,"<br>")}</div></div>`}
 else{const qs=tD.quests||{},quests=getQuests();
-b+=`<div class="gc"><div class="ds"><div class="rw">${ringSvg(qPct,66)}<div class="rtx"><div class="rn">${qDn}/${QT}</div><div class="rl">${t("done")}</div></div></div><div class="dst"><div class="dsr"><span class="dsl">D${el+1} · ${fmtD(today2)}</span><span class="streak-b">🔥 ${streak}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("left")}</span><span class="dsv" style="color:var(--eb)">${left}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("progress")}</span><span class="dsv">${pct}%</span></div><div class="xpbar"><div class="xpfill" style="width:${xpP}%"></div></div><div class="xplbl">Lv.${lvl+1} ${getLN(lvl)} · ${usr.xp}/${nxXp} XP</div></div></div></div>`;
-let lt="";quests.forEach(q=>{const dn=!!qs[q.id];if(q.time!==lt){b+=`<div class="qt">${q.time}<span class="ql"></span></div>`;lt=q.time}b+=`<div class="qi ${dn?"dn":""}" onclick="toggleQ('${today2}','${q.id}')"><div class="qc">${dn?"✓":""}</div><div class="qct"><div class="t">${q.title}</div>${q.desc?`<div class="d">${q.desc}</div>`:""}</div><div class="qe">${q.emoji}</div></div>`;if(q.id==="dn"){b+=`<div class="gc2"><div class="ct2">${t("dinnerTitle")}</div>`;DCATS.forEach((cat,ci)=>{b+=`<div class="mc ${openCats[ci]?"op":""}"><div class="mct" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${cat.n} <span class="mn">${cat.note||""}</span></div><div class="ml">${cat.items.map(i=>`<div class="mi">· ${i}</div>`).join("")}</div></div>`});b+=`</div>`}});
+b+=`<div class="gc"><div class="ds"><div class="rw">${ringSvg(qPct,66)}<div class="rtx"><div class="rn">${qDn}/${QT}</div><div class="rl">${t("done")}</div></div></div><div class="dst"><div class="dsr"><span class="dsl">D${el+1}/${cfg.totalDays} · ${fmtD(today2)}</span><span class="streak-b">🔥 ${streak}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("left")}</span><span class="dsv" style="color:var(--eb)">${left}${t("day")}</span></div><div class="dsr"><span class="dsl">${lang==="zh"?"建议每日总热量":"하루 권장 총 섭취량"}</span><span class="dsv" style="color:var(--cy)">${calInfo.recMin.toLocaleString()}~${calInfo.recMax.toLocaleString()} kcal</span></div><div class="xpbar"><div class="xpfill" style="width:${xpP}%"></div></div><div class="xplbl">Lv.${lvl+1} ${getLN(lvl)} · ${usr.xp}/${nxXp} XP</div></div></div></div>`;
+let lt="";quests.forEach(q=>{const dn=!!qs[q.id];if(q.time!==lt){b+=`<div class="qt">${q.time}<span class="ql"></span></div>`;lt=q.time}b+=`<div class="qi ${dn?"dn":""}" data-testid="quest-${q.id}" onclick="toggleQ('${today2}','${q.id}')"><div class="qc">${dn?"✓":""}</div><div class="qct"><div class="t">${q.title}</div>${q.desc?`<div class="d">${q.desc}</div>`:""}</div><div class="qe">${q.emoji}</div></div>`;if(q.id==="dn"){b+=`<div class="gc2"><div class="ct2">${t("dinnerTitle")} <span style="font-size:10px;color:var(--cy);font-weight:500">(${lang==="zh"?"每日建议总摄入":"일일 총 권장"}: ${calInfo.recMin.toLocaleString()}~${calInfo.recMax.toLocaleString()} kcal)</span></div>`;DCATS.forEach((cat,ci)=>{const nt=dcatNote(cat);b+=`<div class="mc ${openCats[ci]?"op":""}"><div class="mct" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${dcatName(cat)} <span class="mn">${nt}</span></div><div class="ml">${cat.items.map(i=>`<div class="mi">· ${dcatItem(i)}</div>`).join("")}</div></div>`});b+=`</div>`}});
 if(qDn===QT&&!tD.gamePlayed)b+=`<div style="text-align:center;padding:12px"><button class="game-btn" onclick="showGameIntro()">${t("gameUnlock")} 🎮</button></div>`}}
 // ═══ WEIGHT ═══
 if(curView==="weight"){
 const bmi=getBMI(),wl=getWeeklyLoss(),pred=getPredictDate();
-b+=`<div class="gc"><div class="cr"><div><div class="bn glow-cy">${lw}kg</div><div class="dm">${t("current")}</div></div><div style="text-align:right"><div class="bn" style="color:${lost>0?"var(--cy)":"var(--np)"};${lost>0?"text-shadow:0 0 10px rgba(0,255,242,.3)":"text-shadow:0 0 10px rgba(255,45,123,.3)"}">${lost>0?"-":"+"}${Math.abs(lost).toFixed(1)}</div><div class="dm">${t("reduced")}(kg)</div></div></div><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="plb">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${t("toGoal")} ${toGo.toFixed(1)}kg</div></div>`;
-// info cards
+const sign=diffW>0?"+":diffW<0?"-":"";
+b+=`<div class="gc"><div class="cr"><div><div class="bn glow-cy">${lw}kg</div><div class="dm">${t("current")}</div></div><div style="text-align:right"><div class="bn" style="color:${diffW<=0?"var(--cy)":"var(--ny)"}">${sign}${Math.abs(diffW).toFixed(1)}</div><div class="dm">${t("reduced")}(kg)</div></div></div><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="plb">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${t("toGoal")} ${toGo.toFixed(1)}kg</div></div>`;
 b+=`<div class="gc"><div class="cr"><div class="sb"><div class="sn" style="color:var(--nv)">${bmi||"--"}</div><div class="dm">${t("bmi")}</div></div><div class="sb"><div class="sn" style="color:var(--ny)">${wl||"--"}kg</div><div class="dm">${t("wkLoss")}</div></div><div class="sb"><div class="sn" style="color:var(--mg)">${pred}</div><div class="dm">${t("predict")}</div></div></div></div>`;
-b+=`<div class="gc"><div class="ct2">⚖️ ${t("rec")}</div><div style="font-size:10px;color:#556">${t("recTip")}</div><div class="ir"><input type="number" step="0.1" placeholder="kg" id="wi" value="${tD.weight||""}"/><button class="svb" onclick="saveW()">${t("save")}</button></div>${tD.weight?`<div class="svh">${t("saved").replace("%s",tD.weight)}</div>`:""}</div>`;
+b+=`<div class="gc"><div class="ct2">⚖️ ${t("rec")}</div><div style="font-size:10px;color:#556">${t("recTip")}</div><div class="ir"><label for="wi" class="sl" style="display:none">${t("rec")}</label><input type="number" step="0.1" placeholder="kg" id="wi" aria-label="${t("rec")}" value="${tD.weight||""}"/><button class="svb" onclick="saveW()">${t("save")}</button></div>${tD.weight?`<div class="svh">${t("saved").replace("%s",tD.weight)}</div>`:""}</div>`;
 b+=`<div class="gc"><div class="ct2">📉 ${t("trend")}</div>${buildChart()}</div>`}
 // ═══ HISTORY ═══
 if(curView==="history"){
-b+=`<div class="gc"><div class="ct2">📆 ${t("cal")}</div>${buildCal()}<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><span style="font-size:8px;color:var(--cy)">■ ≥80%</span><span style="font-size:8px;color:var(--ny)">■ ≥50%</span><span style="font-size:8px;color:var(--np)">■ <50%</span><span style="font-size:8px;color:var(--nv)">■ ${lang==="zh"?"周日":"일"}</span></div></div>`;
-// weekly report
-const wr=weeklyRate();const wg=wr>=80?"S":wr>=60?"A":wr>=40?"B":wr>=20?"C":"D";const wgc=wr>=80?"var(--cy)":wr>=60?"var(--ny)":wr>=40?"var(--o)":"var(--np)";
+b+=`<div class="gc"><div class="ct2">📆 ${t("cal")} (${fmtD(cfg.startDate)} ~ ${fmtD(cfg.endDate)})</div>${buildCal()}<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><span style="font-size:8px;color:var(--cy)">■ ≥80%</span><span style="font-size:8px;color:var(--ny)">■ ≥50%</span><span style="font-size:8px;color:var(--np)">■ <50%</span><span style="font-size:8px;color:var(--nv)">■ ${lang==="zh"?"周日":"일"}</span></div></div>`;
+const wr=weeklyRate();const wg=wr>=80?"S":wr>=60?"A":wr>=40?"B":wr>=20?"C":"D";const wgc=wr>=80?"var(--cy)":wr>=60?"var(--ny)":wr>=40?"var(--eb)":"var(--np)";
 b+=`<div class="gc"><div class="ct2">📊 ${t("wkReport")}</div><div class="cr"><div class="wr-box"><div class="wr-grade" style="color:${wgc};text-shadow:0 0 15px ${wgc}">${wg}</div><div class="wr-label">${lang==="zh"?"等级":"등급"}</div></div><div class="sb"><div class="sn" style="color:${wgc}">${wr}%</div><div class="dm">${t("wkRate")}</div></div><div class="sb"><div class="sn">${avgRate()}%</div><div class="dm">${t("avgRate")}</div></div></div></div>`;
 const days=Math.min(el+1,cfg.totalDays);let h="";
-for(let i=0;i<days;i++){const ds=addD(cfg.startDate,el-i),e=data[ds]||{},isT=ds===today2,di=dBtw(cfg.startDate,ds),s2=isSun(ds);const qd=s2?"🌙":e.quests?Object.values(e.quests).filter(Boolean).length+"/"+QT:"0/"+QT;const qp2=s2?100:e.quests?Math.round(Object.values(e.quests).filter(Boolean).length/QT*100):0;const pc=s2?"var(--nv)":qp2>=80?"var(--cy)":qp2>=50?"var(--ny)":"var(--np)";h+=`<div class="hi"><div class="hd">${isT?t("today"):fmtD(ds)}${s2?" 🌙":""}<span class="hdy">D${di+1}</span></div><div class="hic">${e.weight?`<span class="hw">${e.weight}kg</span>`:'<span class="hn">--</span>'}<span class="hp" style="color:${pc}">${qd}</span></div></div>`}
+for(let i=0;i<days;i++){const ds=addD(cfg.startDate,days-1-i),e=data[ds]||{},isT=ds===today2,di=dBtw(cfg.startDate,ds),s2=isSun(ds);const qd=s2?"🌙":e.quests?Object.values(e.quests).filter(Boolean).length+"/"+QT:"0/"+QT;const qp2=s2?100:e.quests?Math.round(Object.values(e.quests).filter(Boolean).length/QT*100):0;const pc=s2?"var(--nv)":qp2>=80?"var(--cy)":qp2>=50?"var(--ny)":"var(--np)";h+=`<div class="hi"><div class="hd">${isT?t("today"):fmtD(ds)}${s2?" 🌙":""}<span class="hdy">D${di+1}</span></div><div class="hic">${e.weight?`<span class="hw">${e.weight}kg</span>`:'<span class="hn">--</span>'}<span class="hp" style="color:${pc}">${qd}</span></div></div>`}
 b+=`<div class="gc"><div class="ct2">📋 ${t("histTitle")}</div><div class="hl">${h||`<div class="ech">${t("noData")}</div>`}</div></div>`}
-// ═══ STATS ═══
+// ═══ STATS & SETTINGS ═══
 if(curView==="stats"){
+const modeLabel=cfg.goal==="gain"?(lang==="zh"?"增重":"증량"):cfg.goal==="maintain"?(lang==="zh"?"维持":"유지"):(cfg.preset==="flex"?(lang==="zh"?"减重 (温和日常)":"감량 (완화된 루틴)"):(lang==="zh"?"减重 (经典严格)":"감량 (기존 루틴)"));
 b+=`<div class="gc"><div class="cr"><div><div style="font-size:10px;color:#667">${t("level")}</div><div style="font-size:28px;font-weight:800;color:var(--ny);text-shadow:0 0 15px rgba(240,255,0,.3)">Lv.${lvl+1}</div><div style="font-size:12px;font-weight:700;color:var(--mg);text-shadow:0 0 8px rgba(255,0,255,.3)">${getLN(lvl)}</div></div><div style="text-align:right"><div style="font-size:10px;color:#667">${t("xp")}</div><div class="sn" style="color:var(--ny)">${usr.xp}</div><div style="font-size:9px;color:#445">${lang==="zh"?"下一级":"다음"}: ${nxXp}</div></div></div><div class="xpbar" style="margin-top:8px"><div class="xpfill" style="width:${xpP}%"></div></div></div>`;
-b+=`<div class="gc"><div class="ct2">${t("stats")}</div><div class="cr"><div class="sb"><div class="sn glow-cy">${totalStars()}</div><div class="dm">⭐ ${t("stars")}</div></div><div class="sb"><div class="sn glow-ny">${streak}</div><div class="dm">🔥 ${t("streak")}</div></div></div><div class="cr" style="margin-top:8px"><div class="sb"><div class="sn" style="color:var(--eb)">${weeklyRate()}%</div><div class="dm">${t("wkRate")}</div></div><div class="sb"><div class="sn" style="color:var(--nv)">${avgRate()}%</div><div class="dm">${t("avgRate")}</div></div></div><div class="cr" style="margin-top:8px"><div class="sb"><div class="sn">${Object.values(data).filter(v=>v.weight).length}</div><div class="dm">${t("recCnt")}</div></div><div class="sb"><div class="sn">${el}</div><div class="dm">${t("elapsed")}</div></div></div></div>`;
+b+=`<div class="gc"><div class="ct2">${t("stats")}</div><div class="cr"><div class="sb"><div class="sn glow-cy">${totalStars()}</div><div class="dm">⭐ ${t("stars")}</div></div><div class="sb"><div class="sn glow-ny">${streak}</div><div class="dm">🔥 ${t("streak")}</div></div></div><div class="cr" style="margin-top:8px"><div class="sb"><div class="sn" style="color:var(--eb)">${weeklyRate()}%</div><div class="dm">${t("wkRate")}</div></div><div class="sb"><div class="sn" style="color:var(--nv)">${avgRate()}%</div><div class="dm">${t("avgRate")}</div></div></div><div class="cr" style="margin-top:8px"><div class="sb"><div class="sn">${Object.values(data).filter(v=>v.weight).length}</div><div class="dm">${t("recCnt")}</div></div><div class="sb"><div class="sn">${el+1}</div><div class="dm">${t("elapsed")}</div></div></div></div>`;
 b+=`<div class="gc"><div class="ct2">🏅 ${t("badges")}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
 BDEFS.forEach(bd=>{const u=bd.ck();b+=`<div class="bdg ${u?"":"locked"}">${bd.icon} ${lang==="zh"?bd.zh:bd.ko}</div>`});
 b+=`</div><div class="bdg-next">${lang==="zh"?"▸ 下个":"▸ 다음"}: ${nextBadge()}</div></div>`;
-b+=`<div class="gc"><div class="ct2">⚙️ ${t("info")}</div><div class="info-r"><span class="info-l">${t("startD")}</span><span class="info-v">${fmtD(cfg.startDate)}</span></div><div class="info-r"><span class="info-l">${t("endD")}</span><span class="info-v">${fmtD(cfg.endDate)}</span></div><div class="info-r"><span class="info-l">${t("curW")}</span><span class="info-v">${cfg.startWeight}kg → ${cfg.targetWeight}kg</span></div><div class="info-r"><span class="info-l">${t("days")}</span><span class="info-v">${cfg.totalDays}${t("day")}</span></div>${cfg.height?`<div class="info-r"><span class="info-l">${t("height")}</span><span class="info-v">${cfg.height}cm</span></div>`:""}</div>`;
-b+=`<button class="ebtn" onclick="endC()">${t("end")}</button><button class="rbtn" onclick="resetAll()">${t("reset")}</button>`}
-app.innerHTML=`<div class="hdr"><div class="logo">🔥 ${lang==="zh"?"燃脂挑战":"번지 챌린지"}</div><div class="hdr-r"><span class="lvl-b">Lv.${lvl+1} ${getLN(lvl)}</span><button class="lang-btn" onclick="toggleLang()">${lang==="zh"?"한국어":"中文"}</button></div></div><div class="hdr-sub">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}${t("day")}</div><div class="ct">${b}</div>${nav}`}
-function startC(){const sw=parseFloat(document.getElementById("s-sw").value),tw=parseFloat(document.getElementById("s-tw").value),ht=parseInt(document.getElementById("s-ht").value),days=parseInt(document.getElementById("s-d").value);if(!sw||sw<30||sw>300){toast(lang==="zh"?"请输入有效体重":"유효한 체중");return}if(!tw||tw<30||tw>300){toast(lang==="zh"?"请输入有效目标":"유효한 목표");return}if(!ht||ht<100||ht>250){toast(lang==="zh"?"请输入有效身高":"유효한 키");return}if(!days||days<7||days>180){toast("7~180");return}const today2=td();cfg={startWeight:sw,targetWeight:tw,height:ht,totalDays:days,startDate:today2,endDate:addD(today2,days)};saveC(cfg);data={};data[today2]={weight:sw};saveD(data);usr={xp:0};saveU(usr);curView="quest";toast(lang==="zh"?"挑战开始！💪":"도전 시작! 💪");render()}
+b+=`<div class="gc"><div class="ct2">⚙️ ${t("info")}</div><div class="info-r"><span class="info-l">${lang==="zh"?"模式 / 方案":"모드 / 프리셋"}</span><span class="info-v">${modeLabel}${cfg.muscle?(lang==="zh"?" +增肌":" +근육강화"):""}</span></div><div class="info-r"><span class="info-l">${t("startD")} ~ ${t("endD")}</span><span class="info-v" data-testid="info-dates">${cfg.startDate} ~ ${cfg.endDate}</span></div><div class="info-r"><span class="info-l">${t("curW")}</span><span class="info-v">${cfg.startWeight}kg → ${cfg.targetWeight}kg</span></div><div class="info-r"><span class="info-l">${t("days")}</span><span class="info-v">${cfg.totalDays}${t("day")}</span></div><div class="info-r"><span class="info-l">BMR / TDEE</span><span class="info-v">${calInfo.bmrRound.toLocaleString()} / ${calInfo.tdeeRound.toLocaleString()} kcal</span></div><div class="info-r"><span class="info-l">${lang==="zh"?"建议每日总摄入":"권장 일일 섭취량"}</span><span class="info-v">${calInfo.recMin.toLocaleString()}~${calInfo.recMax.toLocaleString()} kcal</span></div><div class="info-r"><span class="info-l">${lang==="zh"?"语言切换":"언어 설정"}</span><span class="info-v"><button type="button" class="lang-btn" onclick="toggleLang()">${lang==="zh"?"한국어로 전환":"中文切换"}</button></span></div></div>`;
+b+=`<button type="button" class="ebtn" style="opacity:1" data-testid="btn-export" onclick="exportBackup()">${t("exportBtn")}</button>`;
+b+=`<button type="button" class="ebtn" style="opacity:1" data-testid="btn-import" onclick="triggerImport()">${t("importBtn")}</button>`;
+b+=`<input type="file" id="import-file-input" data-testid="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">`;
+b+=`<button type="button" class="ebtn" data-testid="btn-end" onclick="endC()">${t("end")}</button><button type="button" class="rbtn" data-testid="btn-reset" onclick="resetAll()">${t("reset")}</button>`}
+const footerDisc=`<div class="disc" data-testid="disclaimer-footer">⚠️ ${t("disclaimer")}</div>`;
+app.innerHTML=`<div class="hdr"><div class="logo">🔥 ${t("appTitle")}</div><div class="hdr-r"><span class="lvl-b">Lv.${lvl+1} ${getLN(lvl)}</span><button type="button" class="lang-btn" data-testid="btn-lang" onclick="toggleLang()">${lang==="zh"?"한국어":"中文"}</button></div></div><div class="hdr-sub">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}${t("day")} (${cfg.startDate}~${cfg.endDate})</div><div class="ct">${b}${footerDisc}</div>${nav}`}
+
+function startC(customPlan){
+  syncObInputs();
+  const isHook=!!(customPlan&&typeof customPlan==="object");
+  const p=isHook?customPlan:ob;
+  const rawSw=(isHook&&"startWeight" in customPlan)?customPlan.startWeight:p.startWeight;
+  const rawHt=(isHook&&"height" in customPlan)?customPlan.height:p.height;
+  const rawAge=(isHook&&"age" in customPlan)?customPlan.age:p.age;
+  const rawDays=(isHook&&("totalDays" in customPlan||"days" in customPlan))?(customPlan.totalDays!==undefined?customPlan.totalDays:customPlan.days):(p.totalDays!==undefined?p.totalDays:(p.days!==undefined?p.days:ob.days));
+  const sex=(isHook&&"sex" in customPlan)?customPlan.sex:p.sex;
+  const sw=(rawSw===""||rawSw===null||rawSw===undefined)?NaN:parseFloat(rawSw);
+  const ht=(rawHt===""||rawHt===null||rawHt===undefined)?NaN:parseFloat(rawHt);
+  const age=(rawAge===""||rawAge===null||rawAge===undefined)?NaN:parseInt(rawAge,10);
+  const days=(rawDays===""||rawDays===null||rawDays===undefined)?NaN:parseInt(rawDays,10);
+  const goal=p.goal||ob.goal||"loss";
+  const rawTw=(isHook&&"targetWeight" in customPlan)?customPlan.targetWeight:p.targetWeight;
+  const tw=goal==="maintain"?sw:((rawTw===""||rawTw===null||rawTw===undefined)?NaN:parseFloat(rawTw));
+  const hookExplicitAgeSex=isHook&&("age" in customPlan)&&("sex" in customPlan);
+  const med=isHook?(("med" in customPlan)?customPlan.med:(ob.med||(hookExplicitAgeSex?"none":""))):ob.med;
+  const ed=isHook?(("ed" in customPlan)?customPlan.ed:(ob.ed||(hookExplicitAgeSex?"none":""))):ob.ed;
+  const preg=isHook?(("preg" in customPlan)?customPlan.preg:(ob.preg||(hookExplicitAgeSex?(sex==="f"?"no":""):""))):ob.preg;
+  const fullPlan=Object.assign({},ob,p,{goal,sex,startWeight:sw,targetWeight:tw,height:ht,age,totalDays:days,days,med,ed,preg});
+  const check=canStart(fullPlan);
+  if(!check.ok){
+    toast(check.reason);
+    return check;
+  }
+  const startDate=p.startDate||td();
+  const endDate=addD(startDate,days-1);
+  const cal=calcCaloriePlan(fullPlan);
+  cfg={
+    schemaVersion:2,
+    goal,
+    muscle:!!fullPlan.muscle,
+    sex:fullPlan.sex,
+    age,
+    height:ht,
+    startWeight:sw,
+    targetWeight:tw,
+    totalDays:days,
+    startDate,
+    endDate,
+    med:fullPlan.med,
+    medAck:!!fullPlan.medAck,
+    pains:Array.isArray(fullPlan.pains)?fullPlan.pains:["none"],
+    preg:fullPlan.sex==="f"?fullPlan.preg:"no",
+    ed:fullPlan.ed,
+    workType:fullPlan.workType||"standing",
+    pal:resolvePal(fullPlan.pal||fullPlan.workType),
+    mealType:fullPlan.mealType||"out",
+    allergy:fullPlan.allergy||"none",
+    allergyMemo:fullPlan.allergyMemo||"",
+    exTime:fullPlan.exTime||"10",
+    exPlace:fullPlan.exPlace||"shop",
+    preset:goal==="loss"?(fullPlan.preset||"flex"):goal,
+    bmr:cal.bmrRound,
+    tdee:cal.tdeeRound,
+    recCalMin:cal.recMin,
+    recCalMax:cal.recMax
+  };
+  saveC(cfg);
+  data={};
+  data[startDate]={weight:sw};
+  saveD(data);
+  usr={xp:0};
+  saveU(usr);
+  curView="quest";
+  toast(lang==="zh"?"挑战开始！💪":"도전 시작! 💪");
+  render();
+  return{ok:true,cfg};
+}
 function saveW(){const v=parseFloat(document.getElementById("wi").value);if(v>30&&v<300)sdf(td(),"weight",v);else toast(lang==="zh"?"请输入有效体重":"유효한 체중")}
-function endC(){if(confirm(lang==="zh"?"确定结束？":"종료할까요?")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};curView="quest";render()}}
-function resetAll(){if(confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};curView="quest";render()}}
+function endC(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"确定结束？":"종료할까요?")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};ob=defaultOb();obStep=1;curView="quest";render()}}
+function resetAll(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};ob=defaultOb();obStep=1;curView="quest";render()}}
+
+// ═══ TEST & VERIFICATION HOOKS ═══
+window.__burn60={
+  bmr:calcBMR,
+  tdee:calcTDEE,
+  weeklyRate:calcWeeklyRate,
+  caloriePlan:calcCaloriePlan,
+  canStart:canStart,
+  startChallenge:startC,
+  exportData:getExportObject,
+  importData:(obj,skipConfirm=true)=>applyBackupObject(obj,skipConfirm),
+  resetAll:(skipConfirm=true)=>resetAll(skipConfirm),
+  getQuests:getQuests,
+  getConfig:()=>cfg,
+  setLang:setLang
+};
 render();
 </script>
 </body>

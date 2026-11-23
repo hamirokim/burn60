@@ -368,7 +368,8 @@ function initialPlan(c,cf){
   const fit=co.fitness||{};
   const f=(Number(fit.fTest)>0)?Number(fit.fTest):(QUICK_MAP[fit.quick]||2);
   const knee=(co.joints&&co.joints.knee)||"none";
-  const elev=(place&&place.elevator)||"yes";
+  const elevRaw=(place&&place.elevator)||"no";
+  const elev=elevRaw==="yes"?"yes":"no";
   let mode="stairs";
   if(knee==="now"||co.stairsLocked||!place||span<1||(elev==="no"&&knee==="mild")){
     mode="flat";
@@ -526,7 +527,7 @@ function applySession(state,s,today){
     msgKey="s3";
     changes.push("pace:easy");
   }else{
-    const recentHardMiss=past.filter(x=>x&&x.missReason==="hard"&&(!x.d||(dBtw(x.d,today)>=0&&dBtw(x.d,today)<=7))).length+(missReason==="hard"?1:0);
+    const recentHardMiss=past.filter(x=>x&&x.missReason==="hard"&&(!x.d||(dBtw(x.d,today)>=0&&dBtw(x.d,today)<=6))).length+(missReason==="hard"?1:0);
     const isR2=(judged==="hard"&&prev&&prev.judged==="hard")||recentHardMiss>=2;
     if(isR2){
       if(canMove(c,-1,today)){
@@ -602,6 +603,7 @@ function dailyCheck(state,today){
   const ss=Array.isArray(state.sessions)?state.sessions:[];
   const doneList=ss.filter(x=>x&&x.d&&x.d<=today&&Number(x.doneRounds)>=1).sort((a,b)=>a.d.localeCompare(b.d));
   const last=doneList.length?doneList[doneList.length-1].d:(c.startDate||cf.startDate||today);
+  if(c.reentry&&c.reentry.until&&today>c.reentry.until&&doneList.some(x=>x.d>=addD(c.reentry.until,-7)))c.reentry=null;
   const gap=dBtw(last,today);
   const rules=[];
   if(gap>=14){
@@ -662,7 +664,9 @@ function kcalTarget(cfIn,cIn,weight){
   if(isMaint)target=tdee+adj;
   else if(isLoss)target=Math.max(lo,mid+adj);
   else target=Math.min(hi,mid+adj);
-  return{tdee,target,min:target-100,max:target+100,lo,hi,atFloor:Boolean(isLoss&&(target-100)<lo)};
+  const mn=isLoss?Math.max(lo,target-100):target-100;
+  const mxv=(!isMaint&&!isLoss)?Math.min(hi,target+100):target+100;
+  return{tdee,target,min:mn,max:Math.max(mn,mxv),lo,hi,atFloor:Boolean(isLoss&&(target-100)<lo)};
 }
 function checkinDue(c,today){
   if(!c||!today||!c.startDate)return false;
@@ -704,6 +708,7 @@ function weeklyCheckin(state,today){
   const wNow=avgWeight(dObj,from,to);
   const w14=avgWeight(dObj,addD(today,-21),addD(today,-15));
   const wPrev=avgWeight(dObj,addD(today,-14),addD(today,-8));
+  c.firstButton=null;c.suggestSlot=null;
   const rules=[],changes=[];
   const goal=cf.goal||"loss";
   const isMaint=Boolean(c.maintenance||goal==="maintain");
@@ -810,7 +815,7 @@ function weeklyCheckin(state,today){
     :(z?`平地步行 3分钟 × ${c.plan.N}轮`:`평지 걷기 3분 × ${c.plan.N}라운드`);
   let l3="";
   if(rules.includes("W1")){
-    l3=z?`本周：${pTxt} · 先保证坚持(꾸준함 먼저) / 热量维持`:`이번 주: ${pTxt} · 꾸준함 먼저 / 칼로리 유지`;
+    l3=z?`本周：${pTxt} · 先保证坚持 / 热量维持`:`이번 주: ${pTxt} · 꾸준함 먼저 / 칼로리 유지`;
   }else if(rules.includes("W3")){
     l3=z?`本周：${pTxt} / 建议热量下调 100kcal`:`이번 주: ${pTxt} / 권장 칼로리 100kcal 낮춤`;
   }else if(rules.includes("W4")){
@@ -833,7 +838,7 @@ function defaultCoach(cIn){
   const hasKA=pains.includes("knee")||pains.includes("ankle");
   const base={
     v:1,
-    startDate:cf.startDate||td(),
+    startDate:td(),
     places:[],
     activePlace:0,
     joints:{
@@ -1097,9 +1102,10 @@ function buildExQuestText(sets){
   const co=coach||(cfg?defaultCoach(cfg):null);
   const pl=(co&&co.plan)?co.plan:(co?initialPlan(co,cfg):{R:0,N:2,pace:"easy",mode:"flat",descent:"elevator"});
   const j=(co&&co.joints)||{};
-  const hasKnee=pains.includes("knee")||pains.includes("ankle")||j.knee==="mild"||j.knee==="now"||j.ankle;
-  const hasWrist=pains.includes("wrist")||Boolean(j.wrist);
-  const hasBack=pains.includes("back")||Boolean(j.back);
+  const hasJ=Boolean(co&&co.joints);
+  const hasKnee=hasJ?(j.knee==="mild"||j.knee==="now"||Boolean(j.ankle)):(pains.includes("knee")||pains.includes("ankle"));
+  const hasWrist=hasJ?Boolean(j.wrist):pains.includes("wrist");
+  const hasBack=hasJ?Boolean(j.back):pains.includes("back");
   const isFlat=pl.mode!=="stairs"||Boolean(co&&co.stairsLocked);
   const musTag=(cfg&&cfg.muscle)?(z?" [增肌强化]":" [근력 강화]"):"";
   let title=z?"楼梯与力量运动":"계단·근력 운동";
@@ -1160,7 +1166,7 @@ function getQuests(){
       q14={id:"fs",time:"22:00",emoji:"🌙",title:lang==="zh"?"夜间控食确认":"야식 줄이기 확인",desc:lang==="zh"?"睡前3小时尽量不吃高热量夜宵":"취침 3시간 전 고칼로리 야식 피하기"};
     }
   }
-  return[
+  const qList=[
     {id:"w1",time:"07:00",emoji:"💧",title:t("water"),desc:t("water_d")},
     {id:"wt",time:"07:00",emoji:"⚖️",title:t("weigh"),desc:t("weigh_d")},
     {id:"ex",time:exTime,emoji:"🏃",title:exInfo.title,desc:exInfo.desc},
@@ -1176,6 +1182,7 @@ function getQuests(){
     {id:"w8",time:"21:00",emoji:"💧",title:t("water"),desc:t("water_d")},
     q14
   ];
+  return qList.map((q,i)=>({q,i})).sort((a,b)=>a.q.time.localeCompare(b.q.time)||a.i-b.i).map(x=>x.q);
 }
 function sdf(date,f,v){if(!data[date])data[date]={};data[date][f]=v;saveD(data);toast((lang==="zh"?"已保存":"저장")+" ✓");render()}
 function calcXP(){let xp=0;Object.entries(data).forEach(([k,v])=>{if(v.quests){const dn=Object.values(v.quests).filter(Boolean).length;xp+=dn*10;if(dn===QT&&!isSun(k))xp+=50}});return xp}
@@ -1365,7 +1372,7 @@ function defaultOb(){
     obFloors:"",
     obStartFloor:"",
     obTopFloor:"",
-    obElev:"yes",
+    obElev:"",
     obHandrail:true,
     obKnee:null,
     obQuick:null,
@@ -1768,7 +1775,7 @@ let setDraft=null,setPlaceIdx=0,setSlotIdx=0;
 function _coachMsgText(key,c){
   const z=lang==="zh";
   const pl=(c&&c.plan)||{R:0,N:2,pace:"easy",mode:"flat"};
-  if(key==="s1")return z?"请立刻停下坐着休息。如果胸痛或头晕没有缓解，请拨打 120。":"지금 멈추고 앉아서 쉬세요. 가슴 통증이나 어지러움이 안 가라앉으면 119에 연락하세요.";
+  if(key==="s1")return z?"请立刻停下坐着休息。如果胸痛或头晕没有缓解，请拨打急救电话（中国 120 / 韩国 119）。":"지금 멈추고 앉아서 쉬세요. 가슴 통증이나 어지러움이 안 가라앉으면 응급 전화(한국 119 / 중국 120)에 연락하세요.";
   if(key==="s2")return z?"如果膝盖肿胀、卡住或无法承重，请暂停爬楼，改为平地快走，并建议就医。":"무릎이 붓거나 걸리거나 체중을 못 실으면 계단은 쉬어요. 평지 걷기로 바꾸고, 진료를 권해요.";
   if(key==="s3")return z?`膝盖有点不舒服，下次只爬${pl.R}层，慢慢来。`:`무릎이 조금 불편했군요. 다음엔 ${pl.R}층만, 천천히 가요.`;
   if(key==="r2")return z?`连续两次都很吃力，我们降一格（${_paceLabel(pl.pace,true)} · ${pl.N}轮）。减量也是计划的一部分。`:`두 번 연속 많이 힘들었죠. 한 칸 내려서(${_paceLabel(pl.pace,false)} · ${pl.N}라운드) 갈게요. 줄이는 것도 계획이에요.`;
@@ -1792,6 +1799,7 @@ function _markExQuestDone(today2){
 function doRoundDone(){
   syncFromStorage();
   const today2=td();
+  {const done0=_todaySession(today2);if(done0&&done0.judged)return}
   if(!coach)coach=loadCoach(cfg);
   const pl=coach.plan||initialPlan(coach,cfg);
   let s=_todaySession(today2);
@@ -1815,7 +1823,7 @@ function doBodyStop(){
   const cur=_todaySession(today2);
   const doneR=cur?Number(cur.doneRounds)||0:0;
   const past=sessions.filter(x=>x&&x.d!==today2);
-  const res=applySession({coach,cfg,sessions:past},{plannedRounds:pl.N,doneRounds:doneR,talk:null,pain:0,redFlag:false,bodyStop:true,missReason:null,userPick:null},today2);
+  const res=applySession({coach,cfg,sessions:past},{plannedRounds:cur&&cur.plannedRounds?cur.plannedRounds:pl.N,doneRounds:doneR,talk:cur?cur.talk:null,pain:cur&&typeof cur.pain==="number"?cur.pain:0,redFlag:Boolean(cur&&cur.redFlag),bodyStop:true,missReason:cur?cur.missReason:null,userPick:cur?cur.userPick:null},today2);
   coach=res.coach;
   coach.lastMsgKey=res.msgKey;
   coach.lastMsgDate=today2;
@@ -1848,6 +1856,7 @@ function setCheckField(k,v){
 function saveCheckSheet(){
   syncFromStorage();
   const today2=td();
+  {const done0=_todaySession(today2);if(done0&&done0.judged){checkSheetOpen=false;render();return}}
   if(!coach)coach=loadCoach(cfg);
   const pl=coach.plan||initialPlan(coach,cfg);
   const cur=_todaySession(today2);
@@ -1941,8 +1950,6 @@ function doRetest(){
     retestOpen=true;
     render();
   }else{
-    coach.fitness.fTest=3;
-    coach.fitness.testDate=td();
     coach.needRetest=false;
     coach.reentry=null;
     coach.plan=initialPlan(coach,cfg);
@@ -2164,7 +2171,7 @@ function renderCoachSection(today2){
   if(s1Open){
     h+=`<div class="cc-sheet" data-testid="s1-screen" style="border-color:var(--np)">
       <div class="cc-ttl" style="color:var(--np);margin-bottom:6px">🛑 ${z?"请立刻停止并坐下休息":"즉시 멈추고 앉아서 쉬세요"}</div>
-      <div class="cc-desc">${z?"如果胸痛、头晕或呼吸困难没有缓解，请立即拨打 120。为安全起见，爬楼已锁定。":"가슴 통증이나 어지러움이 안 가라앉으면 즉시 119에 연락하세요. 안전을 위해 계단 라운드가 잠겼습니다."}</div>
+      <div class="cc-desc">${z?"如果胸痛、头晕或呼吸困难没有缓解，请立即拨打急救电话（中国 120 / 韩国 119）。为安全起见，爬楼已锁定。":"가슴 통증이나 어지러움이 안 가라앉으면 즉시 응급 전화(한국 119 / 중국 120)에 연락하세요. 안전을 위해 계단 라운드가 잠겼습니다."}</div>
       <button type="button" class="cc-btn" style="width:100%" onclick="s1Open=false;render()">${z?"我知道了":"확인"}</button>
     </div>`;
   }
@@ -2194,10 +2201,12 @@ function renderCoachSection(today2){
     ${coach.stairsLocked?`<div class="cc-msg" style="border-color:var(--np);color:#ffd0e0">
       <div>🔒 ${coach.lockReason==="body"?(z?"因身体停止信号，爬楼已暂停并改为平地代替方案。":"몸 이상 신호로 계단이 잠겨 평지 대안으로 진행합니다."):(z?`因膝盖保护，爬楼已暂停（至${coach.lockUntil||""}改为平地步行）。`:`무릎 보호를 위해 계단이 잠겨 평지 대안으로 전환되었습니다(${coach.lockUntil||""}까지).`)}</div>
       ${coach.lockReason==="body"?`<button type="button" class="cc-btn pri" style="margin-top:6px;width:100%" data-testid="btn-unlock-body" onclick="doUnlockBody()">${z?"已经恢复，重新开始":"괜찮아졌어요, 다시 시작"}</button>`:""}
-      ${canAskKnee?`<div style="margin-top:6px"><div style="margin-bottom:4px">${z?"膝盖疼痛为0了吗？":"무릎 통증 0인가요?"}</div><button type="button" class="cc-btn pri" style="width:100%" data-testid="btn-unlock-knee" onclick="doUnlockKnee()">${z?"是的，膝盖无痛（解锁）":"무릎 통증 0인가요? (잠금 해제)"}</button></div>`:""}
+      ${canAskKnee?`<div style="margin-top:6px"><div style="margin-bottom:4px">${z?"膝盖疼痛为0了吗？":"무릎 통증 0인가요?"}</div><button type="button" class="cc-btn pri" style="width:100%" data-testid="btn-unlock-knee" onclick="doUnlockKnee()">${z?"是的，膝盖无痛（解锁）":"네, 통증 0이에요 (잠금 해제)"}</button></div>`:""}
     </div>`:""}
     ${!isWorkDay
       ?`<div class="cc-desc" style="color:var(--nv);font-weight:700">${z?"今天是休息日":"오늘은 쉬는 날"}</div>`
+      :(tSess&&tSess.judged)?`<div class="cc-desc" data-testid="coach-done-today">${planIntro}<div style="font-size:11px;color:var(--cy);margin-top:4px">✓ ${z?"今天已打卡":"오늘 체크 완료"}</div></div>
+        <div class="cc-btns"><button type="button" class="cc-btn warn" data-testid="btn-stop" onclick="doBodyStop()">${z?"身体不适：停止信号":"몸이 이상해요: 멈춤 신호"}</button></div>`
       :`<div class="cc-desc">${planIntro}${coach.suggestSlot?`<div style="font-size:10px;color:var(--cy);margin-top:2px">💡 ${z?"推荐完成率高时段":"추천 시간대"}: ${coach.suggestSlot}</div>`:""}</div>
         <div class="cc-btns">
           ${coach.firstButton==="oneRound"?`<button type="button" class="cc-btn pri" data-testid="btn-one-round" onclick="doOneRound()">${z?"先做1轮":"1라운드만"}</button>`:""}
@@ -2209,7 +2218,7 @@ function renderCoachSection(today2){
     <details class="cc-stop" data-testid="stop-signs">
       <summary>⚠️ ${z?"运动停止信号与膝盖危险信号 (MedlinePlus, NHS)":"멈춤 신호 및 무릎 위험 신호 안내 (MedlinePlus, NHS)"}</summary>
       <div style="margin-top:6px">
-        <div><b>${z?"全身停止信号":"몸 멈춤 신호"}:</b> ${z?"头晕、胸痛、心跳不规律、呼吸极度困难、恶心 → 立即停止并休息（不缓解请拨打 120）":"어지러움, 가슴 통증, 불규칙한 심장 박동, 숨이 너무 참, 메스꺼움 → 즉시 멈춤 (한국 119 / 중국 120)"}</div>
+        <div><b>${z?"全身停止信号":"몸 멈춤 신호"}:</b> ${z?"头晕、胸痛、心跳不规律、呼吸极度困难、恶心 → 立即停止并休息（不缓解请拨打 中国 120 / 韩国 119）":"어지러움, 가슴 통증, 불규칙한 심장 박동, 숨이 너무 참, 메스꺼움 → 즉시 멈춤 (한국 119 / 중국 120)"}</div>
         <div style="margin-top:4px"><b>${z?"膝盖危险信号":"무릎 위험 신호"}:</b> ${z?"剧烈疼痛、无法活动或无法承重、明显肿胀或变形、卡住/打软腿/疼痛弹响、发热且膝盖红热 → 暂停爬楼并就医":"심하게 아픔, 움직이거나 체중을 못 실음, 많이 붓거나 모양이 변함, 잠기거나 꺾이거나 아픈 딸깍, 열+무릎이 붉고 뜨거움"}</div>
         <div style="margin-top:4px;color:#778">${z?"来源：MedlinePlus, NHS":"출처: MedlinePlus, NHS"}</div>
       </div>
@@ -2351,7 +2360,7 @@ function _buildInitialCoach(cfgObj,isHook,customPlan){
   const totF=parseInt(ob.obFloors,10)||topF||0;
   const stF=parseInt(ob.obStartFloor,10)||1;
   if(topF>0){
-    c.places=[{name:ob.obPlaceName||"home",floorsTotal:totF,startFloor:stF,topFloor:topF,elevator:ob.obElev||"yes",handrail:Boolean(ob.obHandrail)}];
+    c.places=[{name:ob.obPlaceName||"home",floorsTotal:totF,startFloor:stF,topFloor:topF,elevator:ob.obElev||"no",handrail:Boolean(ob.obHandrail)}];
   }
   c.joints.knee=_effObKnee();
   if(ob.obQuick)c.fitness.quick=ob.obQuick;

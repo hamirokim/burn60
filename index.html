@@ -401,6 +401,24 @@ function judge(pace,talk,doneAll,missReason){
   if(pace==="easy"&&doneAll&&tVal===3)return"easy";
   return"ok";
 }
+// One round's 3-tap answer folded into the day's aggregate. talk/pain keep the hardest value; a "none" round
+// only becomes the day's missReason when no round was done at all (spec §3 "못 함(이유)").
+function mergeRound(prev,round,plannedRounds){
+  const a=prev?cloneObj(prev):{plannedRounds,doneRounds:0,partial:false,talk:null,pain:0,redFlag:false,noneReason:null,rounds:[]};
+  a.plannedRounds=plannedRounds;
+  const t=(round.talk===undefined||round.talk===null)?null:Number(round.talk);
+  const pn=Number(round.pain)||0;
+  if(t!==null)a.talk=a.talk===null?t:Math.max(a.talk,t);
+  a.pain=Math.max(Number(a.pain)||0,pn);
+  a.redFlag=Boolean(a.redFlag||round.redFlag);
+  if(round.done==="all"||round.done==="part")a.doneRounds+=1;
+  if(round.done!=="all")a.partial=true;
+  if(round.done==="none"&&!a.noneReason)a.noneReason=(t!==null&&t>=7.5)?"hard":(pn>=1?"pain":"time");
+  a.rounds.push({talk:t,pain:pn,redFlag:Boolean(round.redFlag),done:round.done});
+  a.missReason=a.doneRounds===0?a.noneReason:null;
+  a.doneAll=a.doneRounds>=a.plannedRounds&&!a.partial;
+  return a;
+}
 function weekKey(today,checkinDow){
   if(!today)return null;
   const cd=(checkinDow===undefined||checkinDow===null)?0:Number(checkinDow);
@@ -480,7 +498,7 @@ function applySession(state,s,today){
   const pBefore=cloneObj(c.plan);
   const plannedRounds=(s.plannedRounds!==undefined&&s.plannedRounds!==null)?Number(s.plannedRounds):pBefore.N;
   const doneRounds=(s.doneRounds!==undefined&&s.doneRounds!==null)?Number(s.doneRounds):(s.missReason||s.bodyStop?0:plannedRounds);
-  const doneAll=plannedRounds>0&&doneRounds>=plannedRounds;
+  const doneAll=(s.doneAll!==undefined&&s.doneAll!==null)?Boolean(s.doneAll):(plannedRounds>0&&doneRounds>=plannedRounds);
   const talk=(s.talk===undefined||s.talk===null)?null:Number(s.talk);
   const pain=(s.pain===undefined||s.pain===null)?0:Number(s.pain);
   const redFlag=Boolean(s.redFlag);
@@ -706,6 +724,7 @@ function weeklyCheckin(state,today){
   const dObj=state.data||{};
   const ss=Array.isArray(state.sessions)?state.sessions:[];
   if(!c.plan)c.plan=initialPlan(c,cf);
+  const startPlan=cloneObj(c.plan),startAdj=Number(c.kcalAdj)||0;
   const from=addD(today,-7),to=addD(today,-1);
   const a=adherence(c,ss,from,to);
   const wNow=avgWeight(dObj,from,to);
@@ -800,37 +819,43 @@ function weeklyCheckin(state,today){
   }
   c.lastCheckin=today;
   const z=lang==="zh";
-  const pctStr=a.rate!==null?Math.round(a.rate*100)+"%":"0%";
-  const l1=z?`上周计划 ${a.planned}轮中完成 ${a.done}轮(${pctStr})`:`지난주 계획 ${a.planned}라운드 중 ${a.done}라운드(${pctStr})`;
-  let l2="";
-  if(wNow.n<4){
-    l2=z?"每周记录4次体重后将启用基于体重的调整":"체중을 4번 기록하면 체중 기반 조정을 해요";
-  }else{
-    let dTxt="";
-    if(w14.n>0&&w14.avg!==null){
-      const df=wNow.avg-w14.avg,sg=df>0?"+":"";
-      dTxt=z?`(较两周前 ${sg}${df.toFixed(1)}kg)`:`(2주 전보다 ${sg}${df.toFixed(1)}kg)`;
-    }
-    l2=z?`7日平均体重 ${wNow.avg.toFixed(1)}kg${dTxt}`:`7일 평균 체중 ${wNow.avg.toFixed(1)}kg${dTxt}`;
+  const kgTxt=(v)=>(v<0?"−":"+")+Math.abs(v).toFixed(1)+"kg";
+  const pctN=a.rate!==null?Math.round(a.rate*100):null;
+  const inWin=ss.filter(x=>x&&x.d>=from&&x.d<=to);
+  const talks=inWin.map(x=>x.talk).filter(v=>typeof v==="number");
+  const TALK_KO={3:"노래 가능",5.5:"말은 됨",7.5:"몇 마디만",9:"말 못 함"},TALK_ZH={3:"能唱歌",5.5:"能说话",7.5:"只能说几个字",9:"说不出话"};
+  let talkMode=null;
+  if(talks.length){const cnt={};talks.forEach(v=>{cnt[v]=(cnt[v]||0)+1});talkMode=Number(Object.keys(cnt).sort((x,y)=>cnt[y]-cnt[x]||Number(y)-Number(x))[0])}
+  const painCnt=inWin.filter(x=>Number(x.pain)>=1||x.redFlag).length;
+  let l1=z?`上周：计划 ${a.planned}轮中完成 ${a.done}轮`:`지난주: 계획 ${a.planned}라운드 중 ${a.done}라운드`;
+  if(pctN!==null)l1+=`(${pctN}%)`;
+  if(talkMode!==null)l1+=z?` · 呼吸多为「${TALK_ZH[talkMode]}」`:` · 숨 평균 ‘${TALK_KO[talkMode]}’`;
+  l1+=z?` · 膝盖不适 ${painCnt}次`:` · 무릎 통증 ${painCnt}회`;
+  if(wNow.n>=4){
+    l1+=z?` · 7日平均 ${wNow.avg.toFixed(1)}kg`:` · 7일 평균 ${wNow.avg.toFixed(1)}kg`;
+    if(w14.n>0)l1+=` (${kgTxt(wNow.avg-w14.avg)})`;
   }
-  const pTxt=c.plan.mode==="stairs"
-    ?(z?`爬楼 ${c.plan.R}层 × ${c.plan.N}轮`:`계단 ${c.plan.R}층 × ${c.plan.N}라운드`)
-    :(z?`平地步行 3分钟 × ${c.plan.N}轮`:`평지 걷기 3분 × ${c.plan.N}라운드`);
-  let l3="";
-  if(rules.includes("W1")){
-    l3=z?`本周：${pTxt} · 先保证坚持 / 热量维持`:`이번 주: ${pTxt} · 꾸준함 먼저 / 칼로리 유지`;
-  }else if(rules.includes("W3")){
-    l3=z?`本周：${pTxt} / 建议热量下调 100kcal`:`이번 주: ${pTxt} / 권장 칼로리 100kcal 낮춤`;
-  }else if(rules.includes("W4")){
-    l3=z?`本周：${pTxt} / 减重过快提醒 (+100kcal)`:`이번 주: ${pTxt} / 감량 속도 경고 (+100kcal)`;
-  }else if(rules.includes("W5")){
-    l3=z?`本周：${pTxt} / 增重热量 +100kcal`:`이번 주: ${pTxt} / 증량 칼로리 +100kcal`;
-  }else if(rules.includes("G1")){
-    l3=z?`本周：${pTxt} / 达成目标！建议切换维持模式`:`이번 주: ${pTxt} / 목표 달성! 유지 모드 제안`;
-  }else{
-    l3=z?`本周：${pTxt} 保持不变 / 热量维持`:`이번 주: ${pTxt} 그대로 / 칼로리 유지`;
-  }
-  const note={wk:today,lines:[l1,l2,l3],rules:rules.slice(),changes:changes.slice()};
+  const nB=startPlan.N,nA=c.plan.N;
+  let l2=nB===nA?(z?`本周：每天 ${nA}轮，保持不变`:`이번 주: 하루 ${nA}번 그대로`):(z?`本周：每天 ${nB}轮 → ${nA}轮 (${nA>nB?"+":"−"}${Math.abs(nA-nB)})`:`이번 주: 하루 ${nB}번 → ${nA}번 (${nA>nB?"+":"−"}${Math.abs(nA-nB)})`);
+  const kDelta=(Number(c.kcalAdj)||0)-startAdj;
+  if(kDelta!==0)l2+=z?` · 建议热量 ${kDelta>0?"+":"−"}${Math.abs(kDelta)}kcal`:` · 권장 칼로리 ${kDelta>0?"+":"−"}${Math.abs(kDelta)}kcal`;
+  else if(startPlan.R!==c.plan.R||startPlan.pace!==c.plan.pace)l2+=z?" · 强度有调整":" · 강도 조정";
+  const REASON={
+    M2:["실행이 절반이 안 돼서, 더 작게 다시 시작해요","完成不到一半，先从更小的量重新开始"],
+    W1:["꾸준함 먼저예요. 칼로리는 그대로 두고 횟수를 줄였어요","先保证坚持。热量不变，先减少轮数"],
+    W4:["2주 연속 1주에 1kg 넘게 빠졌어요. 조금 더 먹어요","连续两周每周减重超过1kg，适当多吃一点"],
+    W3:["실행은 충분한데 체중이 2주째 그대로예요","执行得很好，但体重两周没有变化"],
+    W5:["실행은 충분한데 체중이 2주째 그대로예요","执行得很好，但体重两周没有变化"],
+    G1:["목표 체중에 닿았어요. 유지 모드를 골라 보세요","已达到目标体重，可以切换到维持模式"],
+    G2:["유지 범위를 2주 연속 벗어났어요","连续两周超出维持范围"],
+    "W-skip":["체중을 이번 주 4번 기록하면 체중 기반 조정을 해요","本周记录4次体重后，将按体重调整"]
+  };
+  const order=["M2","W1","W4","W3","W5","G1","G2","W-skip"];
+  const top=order.find(k=>rules.includes(k));
+  const rTxt=top?REASON[top][z?1:0]:(z?"按计划进行中":"계획대로 가고 있어요");
+  const l3=(z?"原因：":"이유: ")+rTxt;
+  const status=pctN===null?"none":pctN>=70?"good":pctN>=50?"short":"low";
+  const note={wk:today,lines:[l1,l2,l3],rules:rules.slice(),changes:changes.slice(),rate:a.rate,done:a.done,planned:a.planned,status};
   return{coach:c,cfg:cf,note,rules,changes};
 }
 
@@ -1778,6 +1803,7 @@ let setDraft=null,setPlaceIdx=0,setSlotIdx=0;
 function _coachMsgText(key,c){
   const z=lang==="zh";
   const pl=(c&&c.plan)||{R:0,N:2,pace:"easy",mode:"flat"};
+  if(key==="rest")return z?"先停下休息。如果症状持续，请拨打急救电话（中国 120 / 韩国 119）。":"지금은 멈추고 쉬세요. 증상이 계속되면 응급 전화(한국 119 / 중국 120)에 연락하세요.";
   if(key==="s1")return z?"请立刻停下坐着休息。如果胸痛或头晕没有缓解，请拨打急救电话（中国 120 / 韩国 119）。":"지금 멈추고 앉아서 쉬세요. 가슴 통증이나 어지러움이 안 가라앉으면 응급 전화(한국 119 / 중국 120)에 연락하세요.";
   if(key==="s2")return z?"如果膝盖肿胀、卡住或无法承重，请暂停爬楼，改为平地快走，并建议就医。":"무릎이 붓거나 걸리거나 체중을 못 실으면 계단은 쉬어요. 평지 걷기로 바꾸고, 진료를 권해요.";
   if(key==="s3")return z?`膝盖有点不舒服，下次只爬${pl.R}层，慢慢来。`:`무릎이 조금 불편했군요. 다음엔 ${pl.R}층만, 천천히 가요.`;
@@ -1799,106 +1825,104 @@ function _markExQuestDone(today2){
     saveU(usr);
   }
 }
-function doRoundDone(){
-  syncFromStorage();
+// ═══ ROUND FLOW: "이 라운드 완료" → 3-tap (breath, knee, done) → saved on the third tap ═══
+// Today's rules are recomputed from the engine state at the start of the day (dayBase), so several rounds
+// in one day count as ONE session for P1/R2 and never stack ladder moves.
+const ENGINE_FIELDS=["plan","stairsLocked","lockReason","lockUntil","s3","reentry","ladderLog"];
+let sessionOpen=false,restNotice=false;
+function _engineSnap(c){const o={};ENGINE_FIELDS.forEach(k=>{o[k]=cloneObj(c[k]===undefined?null:c[k])});return o}
+function _dayBaseFor(today2){
+  if(!coach.dayBase||coach.dayBase.d!==today2)coach.dayBase={d:today2,engine:_engineSnap(coach)};
+  return coach.dayBase.engine;
+}
+function _resnapDayBase(){if(coach&&coach.dayBase&&coach.dayBase.d===td())coach.dayBase.engine=_engineSnap(coach)}
+function _learnApply(sess,sign){
+  if(!sess)return;
+  const sl=sess.slot||"evening",md=sess.mode||"flat";
+  if(!learn.slots)learn.slots={};if(!learn.moves)learn.moves={};
+  if(!learn.slots[sl])learn.slots[sl]={offered:0,done:0};
+  if(!learn.moves[md])learn.moves[md]={offered:0,done:0};
+  const p=(Number(sess.plannedRounds)||0)*sign,d=(Number(sess.doneRounds)||0)*sign;
+  learn.slots[sl].offered=Math.max(0,learn.slots[sl].offered+p);learn.slots[sl].done=Math.max(0,learn.slots[sl].done+d);
+  learn.moves[md].offered=Math.max(0,learn.moves[md].offered+p);learn.moves[md].done=Math.max(0,learn.moves[md].done+d);
+}
+function _evalToday(agg,bodyStop){
   const today2=td();
-  {const done0=_todaySession(today2);if(done0&&done0.judged)return}
+  const base=_dayBaseFor(today2);
+  const baseCoach=Object.assign(cloneObj(coach),cloneObj(base));
+  delete baseCoach.dayBase;delete baseCoach.draft;
+  const cur=_todaySession(today2);
+  const past=sessions.filter(x=>x&&x.d!==today2);
+  const slot=(cur&&cur.slot)||(coach.slots&&coach.slots[0]&&coach.slots[0].name)||"evening";
+  const res=applySession({coach:baseCoach,cfg,sessions:past},{plannedRounds:agg.plannedRounds,doneRounds:agg.doneRounds,doneAll:agg.doneAll,talk:agg.talk,pain:agg.pain,redFlag:agg.redFlag,bodyStop:Boolean(bodyStop||(cur&&cur.bodyStop)),missReason:agg.missReason,userPick:null,slot},today2);
+  const keepDay=coach.dayBase;
+  coach=Object.assign(cloneObj(coach),res.coach,{dayBase:keepDay,draft:null,lastMsgKey:res.msgKey,lastMsgRules:res.rules,lastMsgDate:today2});
+  const sess=Object.assign(res.session,{agg});
+  _learnApply(cur,-1);_learnApply(sess,1);
+  saveLearn(learn,today2);
+  saveCoach(coach);
+  past.push(sess);
+  saveSessions(past,today2);
+  if(sess.doneRounds>=1)_markExQuestDone(today2);
+  lastCoachMsg=_coachMsgText(res.msgKey,coach);
+  return res;
+}
+function startRound(){
+  syncFromStorage();
   if(!coach)coach=loadCoach(cfg);
-  const pl=coach.plan||initialPlan(coach,cfg);
-  let s=_todaySession(today2);
-  if(!s){
-    s={d:today2,slot:(coach.slots&&coach.slots[0]&&coach.slots[0].name)||"evening",place:coach.activePlace||0,plannedRounds:pl.N,doneRounds:0,R:pl.R,pace:pl.pace,mode:pl.mode,talk:null,pain:0,redFlag:false,bodyStop:false,missReason:null,userPick:null,secs:0,judged:null};
-    sessions.push(s);
-  }
-  s.plannedRounds=pl.N;
-  s.doneRounds=Math.min(pl.N,(Number(s.doneRounds)||0)+1);
-  saveSessions(sessions,today2);
+  const today2=td();
+  if(!coach.draft||coach.draft.d!==today2)coach.draft={d:today2,step:1,talk:null,pain:null,redFlag:false};
+  saveCoach(coach);
+  sessionOpen=true;
   render();
 }
-function doOneRound(){
-  doRoundDone();
+function answerRound(field,value){
+  syncFromStorage();
+  const today2=td();
+  if(!coach.draft||coach.draft.d!==today2)coach.draft={d:today2,step:1,talk:null,pain:null,redFlag:false};
+  const dr=coach.draft;
+  if(field==="talk"){dr.talk=value;dr.step=2}
+  else if(field==="pain"){dr.pain=value;dr.step=3}
+  else if(field==="done"){submitRound(value);return}
+  saveCoach(coach);
+  render();
+}
+function toggleRedFlag(){
+  syncFromStorage();
+  if(!coach.draft)return;
+  coach.draft.redFlag=!coach.draft.redFlag;
+  saveCoach(coach);
+  render();
+}
+function roundStepBack(){
+  if(coach&&coach.draft&&coach.draft.step>1){coach.draft.step--;saveCoach(coach);render()}
+}
+function laterRound(){sessionOpen=false;if(coach)saveCoach(coach);render()}
+function submitRound(done){
+  const today2=td();
+  const dr=coach.draft||{talk:null,pain:0,redFlag:false};
+  const base=_dayBaseFor(today2);
+  const planned=(base.plan&&base.plan.N)||(coach.plan&&coach.plan.N)||1;
+  const cur=_todaySession(today2);
+  const agg=mergeRound(cur&&cur.agg?cur.agg:null,{talk:dr.talk,pain:dr.pain,redFlag:dr.redFlag,done},planned);
+  const res=_evalToday(agg,false);
+  sessionOpen=false;
+  restNotice=(dr.talk===9);
+  toast(restNotice?_coachMsgText("rest",coach):lastCoachMsg);
+  render();
+  return res;
 }
 function doBodyStop(){
   syncFromStorage();
-  const today2=td();
   if(!coach)coach=loadCoach(cfg);
-  const pl=coach.plan||initialPlan(coach,cfg);
+  const today2=td();
+  const base=_dayBaseFor(today2);
+  const planned=(base.plan&&base.plan.N)||(coach.plan&&coach.plan.N)||1;
   const cur=_todaySession(today2);
-  const doneR=cur?Number(cur.doneRounds)||0:0;
-  const past=sessions.filter(x=>x&&x.d!==today2);
-  const res=applySession({coach,cfg,sessions:past},{plannedRounds:cur&&cur.plannedRounds?cur.plannedRounds:pl.N,doneRounds:doneR,talk:cur?cur.talk:null,pain:cur&&typeof cur.pain==="number"?cur.pain:0,redFlag:Boolean(cur&&cur.redFlag),bodyStop:true,missReason:cur?cur.missReason:null,userPick:cur?cur.userPick:null},today2);
-  coach=res.coach;
-  coach.lastMsgKey=res.msgKey;
-  coach.lastMsgDate=today2;
-  saveCoach(coach);
-  past.push(res.session);
-  saveSessions(past,today2);
-  lastCoachMsg=_coachMsgText(res.msgKey,coach);
+  const agg=(cur&&cur.agg)?cloneObj(cur.agg):{plannedRounds:planned,doneRounds:0,partial:true,talk:null,pain:0,redFlag:false,noneReason:null,rounds:[],missReason:null,doneAll:false};
+  _evalToday(agg,true);
+  sessionOpen=false;
   s1Open=true;
-  checkSheetOpen=false;
-  render();
-}
-function openCheckSheet(){
-  syncFromStorage();
-  const today2=td();
-  const cur=_todaySession(today2);
-  checkForm={
-    talk:cur&&cur.talk!==null?cur.talk:null,
-    pain:cur&&typeof cur.pain==="number"?cur.pain:0,
-    redFlag:Boolean(cur&&cur.redFlag),
-    missReason:(cur&&cur.missReason)||null,
-    userPick:(cur&&cur.userPick)||null
-  };
-  checkSheetOpen=true;
-  render();
-}
-function setCheckField(k,v){
-  checkForm[k]=v;
-  render();
-}
-function saveCheckSheet(){
-  syncFromStorage();
-  const today2=td();
-  {const done0=_todaySession(today2);if(done0&&done0.judged){checkSheetOpen=false;render();return}}
-  if(!coach)coach=loadCoach(cfg);
-  const pl=coach.plan||initialPlan(coach,cfg);
-  const cur=_todaySession(today2);
-  const doneR=cur?Number(cur.doneRounds)||0:0;
-  const past=sessions.filter(x=>x&&x.d!==today2);
-  const res=applySession({coach,cfg,sessions:past},{
-    plannedRounds:pl.N,
-    doneRounds:doneR,
-    talk:checkForm.talk,
-    pain:checkForm.pain,
-    redFlag:checkForm.redFlag,
-    bodyStop:false,
-    missReason:checkForm.missReason,
-    userPick:checkForm.userPick
-  },today2);
-  coach=res.coach;
-  coach.lastMsgKey=res.msgKey;
-  coach.lastMsgRules=res.rules;
-  coach.lastMsgDate=today2;
-  saveCoach(coach);
-  past.push(res.session);
-  saveSessions(past,today2);
-  const slName=res.session.slot||"evening";
-  const mdName=res.session.mode||"flat";
-  if(!learn.slots)learn.slots={};
-  if(!learn.slots[slName])learn.slots[slName]={offered:0,done:0};
-  learn.slots[slName].offered+=Number(res.session.plannedRounds)||0;
-  learn.slots[slName].done+=Number(res.session.doneRounds)||0;
-  if(!learn.moves)learn.moves={};
-  if(!learn.moves[mdName])learn.moves[mdName]={offered:0,done:0};
-  learn.moves[mdName].offered+=Number(res.session.plannedRounds)||0;
-  learn.moves[mdName].done+=Number(res.session.doneRounds)||0;
-  if(!Array.isArray(learn.picks))learn.picks=[];
-  if(res.session.userPick)learn.picks.push({d:today2,pick:res.session.userPick});
-  saveLearn(learn,today2);
-  if(res.session.doneRounds>=1)_markExQuestDone(today2);
-  lastCoachMsg=_coachMsgText(res.msgKey,coach);
-  checkSheetOpen=false;
-  toast(lastCoachMsg);
   render();
 }
 function doUnlockBody(){
@@ -1907,7 +1931,7 @@ function doUnlockBody(){
   if(res.ok){
     coach=res.coach;
     s1Open=false;
-    saveCoach(coach);
+    _resnapDayBase();saveCoach(coach);
     render();
   }
 }
@@ -1916,7 +1940,7 @@ function doUnlockKnee(){
   const res=unlock(coach,"knee",td(),true);
   if(res.ok){
     coach=res.coach;
-    saveCoach(coach);
+    _resnapDayBase();saveCoach(coach);
     render();
   }
 }
@@ -1930,7 +1954,7 @@ function onRetestInput(el,applyNow){
     coach.needRetest=false;
     coach.reentry=null;
     coach.plan=initialPlan(coach,cfg);
-    saveCoach(coach);
+    _resnapDayBase();saveCoach(coach);
     render();
   }
 }
@@ -1947,7 +1971,7 @@ function doRetest(){
     coach.plan=initialPlan(coach,cfg);
     retestOpen=false;
     retestVal="";
-    saveCoach(coach);
+    _resnapDayBase();saveCoach(coach);
     render();
   }else if(!retestOpen){
     retestOpen=true;
@@ -1957,14 +1981,14 @@ function doRetest(){
     coach.reentry=null;
     coach.plan=initialPlan(coach,cfg);
     retestOpen=false;
-    saveCoach(coach);
+    _resnapDayBase();saveCoach(coach);
     render();
   }
 }
 function doAcceptMaint(){
   syncFromStorage();
   coach=acceptMaintenance(coach);
-  saveCoach(coach);
+  _resnapDayBase();saveCoach(coach);
   toast(lang==="zh"?"已切换到维持模式 ✓":"유지 모드로 전환되었습니다 ✓");
   render();
 }
@@ -2069,7 +2093,7 @@ function saveCoachSettings(){
   if(setDraft.level==="hard"&&!hardAllowed(setDraft,cfg))setDraft.level="normal";
   setDraft.plan=initialPlan(setDraft,cfg);
   coach=setDraft;
-  saveCoach(coach);
+  _resnapDayBase();saveCoach(coach);
   settingsOpen=false;
   toast(lang==="zh"?"教练设置已保存 ✓":"코치 설정이 저장되었습니다 ✓");
   render();

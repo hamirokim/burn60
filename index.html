@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="burn60">
-<title>burn60</title>
+<title>🔥 버닝 챌린지</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root{
@@ -61,8 +61,13 @@ body{min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden}
 .row-plus{font-family:var(--font);font-size:18px;font-weight:400;color:var(--faint);background:none;border:0;cursor:pointer;min-width:36px;min-height:48px;display:inline-flex;align-items:center;justify-content:flex-end;padding:0 0 0 8px}
 .row-plus:active{opacity:.6}
 .inline-box{padding:8px 0 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.input-field{height:48px;border:1px solid var(--fade);border-radius:var(--r-input);background:var(--hero);color:var(--ink);font-family:var(--font);font-size:var(--fs-value);font-weight:600;text-align:center;padding:0 12px;outline:none;font-variant-numeric:tabular-nums;width:100%}
+.input-field{height:48px;border:1px solid var(--fade);border-radius:var(--r-input);background:var(--hero);color:var(--ink);font-family:var(--font);font-size:var(--fs-value);font-weight:600;text-align:center;padding:0 12px;font-variant-numeric:tabular-nums;width:100%}
 .input-field:focus{border-color:var(--ink)}
+/* focus ring: visible keyboard focus on every focusable control (token-based, replaces outline:none) */
+/* design-rules: ring in body ink; accent only on the key number input (weight) */
+:root{--focus:var(--ink);--focus-key:var(--accent);--focus-w:2px;--focus-off:2px}
+:where(button,a,input,select,textarea,summary,label,[tabindex]):focus-visible{outline:var(--focus-w) solid var(--focus);outline-offset:var(--focus-off)}
+.input-field.key:focus-visible{outline-color:var(--focus-key)}
 .input-field::placeholder{color:var(--faint);font-weight:400}
 .btn-inline{height:48px;padding:0 18px;border:0;border-radius:var(--r-input);background:var(--ink);color:var(--bg);font-family:var(--font);font-size:var(--fs-body);font-weight:600;cursor:pointer;flex-shrink:0}
 .btn-inline:active{transform:scale(.98)}
@@ -77,7 +82,7 @@ body{min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden}
 .aux-block{margin-top:16px}
 .btn-stop-text{font-family:var(--font);font-size:var(--fs-label);font-weight:600;color:var(--bad);background:none;border:0;cursor:pointer;padding:10px 0;min-height:44px;text-align:left}
 .stop-details{margin-top:4px;font-size:var(--fs-cap);color:var(--faint);line-height:1.45}
-.stop-details summary{cursor:pointer;color:var(--muted);font-weight:400;padding:6px 0;outline:none}
+.stop-details summary{cursor:pointer;color:var(--muted);font-weight:400;padding:6px 0}
 .notice-box{background:var(--hero);border-radius:var(--r-hero);padding:16px;margin-top:16px}
 .notice-title{font-size:var(--fs-body);font-weight:600;color:var(--ink);margin-bottom:6px}
 .notice-title.bad{color:var(--bad)}
@@ -96,7 +101,7 @@ body{min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden}
 .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:calc(56px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);display:flex;background:var(--bg);z-index:25}
 .tab{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--font);font-size:var(--fs-cap);font-weight:400;color:var(--faint);background:none;border:0;cursor:pointer;height:56px}
 .tab.on{color:var(--ink);font-weight:600}
-.toast{position:fixed;left:50%;transform:translateX(-50%);width:calc(100% - 40px);max-width:390px;bottom:calc(126px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);font-size:var(--fs-body);font-weight:400;padding:12px 16px;border-radius:var(--r-input);text-align:center;box-shadow:var(--shadow-sheet);z-index:100;transition:opacity .2s;pointer-events:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 40px);bottom:calc(126px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);font-size:var(--fs-label);font-weight:400;padding:9px 16px;border-radius:var(--r-input);text-align:center;box-shadow:var(--shadow-sheet);z-index:100;transition:opacity .2s;pointer-events:none}
 .toast.hide{opacity:0}
 .step-meta{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
 .step-meta span{font-size:var(--fs-cap);color:var(--faint)}
@@ -168,9 +173,10 @@ try{if(window.matchMedia){window.matchMedia("(prefers-color-scheme: dark)").addE
 function t(k){return(L[lang]&&L[lang][k])||L.ko[k]||L.zh[k]||k}
 function syncDocLang(){
   document.documentElement.lang=lang==="zh"?"zh-CN":"ko";
-  document.title="burn60";
+  const ttl=lang==="zh"?"燃脂挑战":"버닝 챌린지";
+  document.title="🔥 "+ttl;
   const m=document.querySelector('meta[name="apple-mobile-web-app-title"]');
-  if(m)m.setAttribute("content","burn60");
+  if(m)m.setAttribute("content",ttl);
 }
 function setLang(l){lang=l==="zh"?"zh":"ko";try{localStorage.setItem("b60lang",lang)}catch(e){}syncDocLang();render()}
 function toggleLang(){setLang(lang==="zh"?"ko":"zh")}
@@ -2451,7 +2457,7 @@ function renderToday(today2){
           <button type="button" class="row-plus" data-testid="row-weight-add" onclick="toggleWeightInput()">+</button>
         </div>
         ${weightInputOpen?`<div class="inline-box">
-          <input type="number" step="0.1" id="wi" data-testid="input-weight" class="input-field" style="flex:1" value="" placeholder="kg" oninput="onWeightInlineInput(this)" onchange="onWeightInlineInput(this)">
+          <input type="number" step="0.1" id="wi" data-testid="input-weight" class="input-field key" style="flex:1" value="" placeholder="kg" oninput="onWeightInlineInput(this)" onchange="onWeightInlineInput(this)">
           <button type="button" class="btn-inline" data-testid="btn-weight-save" disabled onclick="saveW()">${t("save")}</button>
         </div>`:""}
         <div class="row">
@@ -2580,7 +2586,15 @@ function renderSettings(){
 }
 
 // ═══ RENDER ═══
-function render(){
+// keep the last row above the fixed bottom dock (its height varies: 1-2 buttons, notices)
+function fitDock(){
+  const w=document.querySelector("#app .screen-wrap"),d=document.querySelector("#app .foot-dock");
+  if(!w)return;
+  const tab=d&&!d.classList.contains("no-tabs")?56:0;
+  w.style.paddingBottom=d?(d.getBoundingClientRect().height+tab+16)+"px":"";
+}
+function render(){_renderScreen();fitDock()}
+function _renderScreen(){
   syncFromStorage();
   applyTheme();
   const app=document.getElementById("app");

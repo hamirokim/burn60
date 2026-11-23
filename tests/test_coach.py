@@ -324,74 +324,106 @@ def app_tests(browser):
     rec("quests_sorted_by_time", ts == sorted(ts), ts)
     rec("exsets_errors_zero", err == [], err); ctx.close()
 
-def smoke(browser):
-    ctx, page, err = new_page(browser)
+def go_onboarding(page, env=True):
     c = lambda tid: page.locator(f'[data-testid="{tid}"]').first.click()
     c("btn-next"); page.wait_for_timeout(100)
     c("opt-sex-m"); page.locator('[data-testid="input-age"]').fill("35"); page.locator('[data-testid="input-height"]').fill("175")
     page.locator('[data-testid="input-sw"]').fill("80"); page.locator('[data-testid="input-tw"]').fill("78")
     c("btn-next"); page.wait_for_timeout(100)
-    c("opt-med-none"); c("opt-ed-none"); c("btn-next"); page.wait_for_timeout(150)
-    # step 4 coach environment
-    c("ob-place-home")
-    page.locator('[data-testid="ob-floors"]').fill("10"); page.locator('[data-testid="ob-start-floor"]').fill("1"); page.locator('[data-testid="ob-top-floor"]').fill("6")
-    c("ob-elev-yes"); c("ob-knee-none"); c("ob-quick-3"); c("ob-slot-lunch"); c("ob-min-5"); c("ob-level-normal")
-    page.screenshot(path=str(SHOT / "v3_01_onboarding_env.png"), full_page=True)
+    c("ob-knee-none"); c("opt-med-none"); c("btn-next"); page.wait_for_timeout(150)
+    c("opt-preg-na"); c("opt-ed-none"); c("btn-next"); page.wait_for_timeout(150)
+    if env:
+        c("ob-place-home")
+        page.locator('[data-testid="ob-floors"]').fill("10"); page.locator('[data-testid="ob-start-floor"]').fill("1"); page.locator('[data-testid="ob-top-floor"]').fill("6")
+        c("ob-elev-yes"); c("ob-quick-3"); c("ob-slot-lunch"); c("ob-min-5"); c("ob-level-normal")
+
+def smoke(browser):
+    ctx, page, err = new_page(browser)
+    c = lambda tid: page.locator(f'[data-testid="{tid}"]').first.click()
+    go_onboarding(page)
     c("btn-later"); page.wait_for_timeout(250)
-    cfg = page.evaluate("() => window.__burn60.getConfig()")
     coach = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_coach')||'null')")
-    rec("smoke_onboarding_started", cfg is not None and coach and coach["plan"]["mode"] == "stairs" and coach["plan"]["R"] == 3 and coach["plan"]["N"] == 2, (coach or {}).get("plan"))
-    card = page.locator('[data-testid="coach-card"]')
-    rec("smoke_coach_card_visible", card.count() > 0 and card.first.is_visible() and "계단" in card.first.inner_text(), card.first.inner_text()[:160] if card.count() else "missing")
+    rec("smoke_onboarding_started", page.evaluate("() => window.__burn60.getConfig()") is not None and coach and coach["plan"]["mode"] == "stairs" and coach["plan"]["R"] == 3 and coach["plan"]["N"] == 2, (coach or {}).get("plan"))
+    hero = page.locator('[data-testid="hero-count"]')
+    rec("smoke_today_hero_0_of_2", hero.count() > 0 and hero.first.inner_text().replace(" ", "") == "0/2", hero.first.inner_text() if hero.count() else "missing")
+    btn = page.locator('[data-testid="btn-primary"]')
+    rec("smoke_primary_round", btn.count() > 0 and btn.first.get_attribute("data-state") == "round" and "이 라운드 완료" in btn.first.inner_text(), btn.first.inner_text() if btn.count() else "missing")
     exq = page.evaluate("() => window.__burn60.getQuests().find(q=>q.id==='ex')")
     rec("smoke_ex_quest_time_from_slot", exq["time"] == "12:30", exq)
     rec("smoke_stop_signs_present", page.locator('[data-testid="stop-signs"]').count() > 0 and "119" in page.locator('[data-testid="stop-signs"]').first.text_content() and "120" in page.locator('[data-testid="stop-signs"]').first.text_content(), "ok")
-    page.screenshot(path=str(SHOT / "v3_02_coach_card.png"), full_page=True)
-    for _ in range(2):
-        c("btn-round-done"); page.wait_for_timeout(120)
-    c("btn-check"); page.wait_for_timeout(150)
-    rec("smoke_check_sheet_open", page.locator('[data-testid="check-sheet"]').count() > 0, "sheet")
-    c("talk-3"); c("pain-0"); page.wait_for_timeout(80)
-    page.screenshot(path=str(SHOT / "v3_03_check_sheet.png"), full_page=True)
-    c("btn-check-save"); page.wait_for_timeout(250)
+    # round 1: full 3-tap
+    c("btn-primary"); page.wait_for_timeout(150)
+    rec("smoke_check_sheet_open", page.locator('[data-testid="check-sheet"]').count() > 0 and page.locator('[data-testid="talk-3"]').count() > 0, "sheet")
+    c("talk-3"); page.wait_for_timeout(80); c("pain-0"); page.wait_for_timeout(80)
+    rec("smoke_step3_visible", page.locator('[data-testid="done-all"]').count() > 0, "step3")
+    c("done-all"); page.wait_for_timeout(200)
+    sess = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_sessions')||'[]')")
+    rec("smoke_round1_saved", len(sess) == 1 and sess[0]["doneRounds"] == 1 and sess[0]["plannedRounds"] == 2 and page.locator('[data-testid="check-sheet"]').count() == 0, sess)
+    rec("smoke_hero_1_of_2", page.locator('[data-testid="hero-count"]').first.inner_text().replace(" ", "") == "1/2", page.locator('[data-testid="hero-count"]').first.inner_text())
+    # round 2: later -> resume
+    c("btn-primary"); page.wait_for_timeout(100); c("talk-5.5"); page.wait_for_timeout(80)
+    c("btn-later-session"); page.wait_for_timeout(150)
+    btn = page.locator('[data-testid="btn-primary"]').first
+    line = page.locator('[data-testid="today-line"]').first.inner_text()
+    rec("smoke_resume_state", btn.get_attribute("data-state") == "resume" and "이어서" in btn.inner_text() and "세션 기록을 이어서 남겨 주세요." in line, [btn.inner_text(), line])
+    page.reload(wait_until="domcontentloaded"); page.wait_for_timeout(200)
+    rec("smoke_draft_survives_reload", page.locator('[data-testid="btn-primary"]').first.get_attribute("data-state") == "resume", "resume after reload")
+    c("btn-primary"); page.wait_for_timeout(120)
+    rec("smoke_resume_opens_saved_step", page.locator('[data-testid="pain-0"]').count() > 0 and page.locator('[data-testid="talk-3"]').count() == 0, "step 2")
+    c("pain-0"); page.wait_for_timeout(80); c("done-all"); page.wait_for_timeout(200)
     sess = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_sessions')||'[]')")
     learn = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_learn')||'null')")
-    rec("smoke_session_logged", len(sess) == 1 and sess[0]["doneRounds"] == 2 and sess[0]["talk"] == 3 and sess[0]["judged"] == "easy", sess)
-    rec("smoke_learn_counters", learn and learn["slots"].get("lunch", {}).get("offered") == 2 and learn["slots"]["lunch"]["done"] == 2, learn)
+    ck = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_coach'))")
+    rec("smoke_two_rounds_one_session", len(sess) == 1 and sess[0]["doneRounds"] == 2 and sess[0]["talk"] == 5.5 and sess[0]["judged"] == "ok", sess)
+    rec("smoke_learn_counted_once_per_day", learn and learn["slots"].get("lunch", {}).get("offered") == 2 and learn["slots"]["lunch"]["done"] == 2, learn)
+    rec("smoke_no_ladder_stacking", len(ck.get("ladderLog") or []) == 0 and ck["plan"]["N"] == 2 and ck.get("draft") is None, [ck.get("ladderLog"), ck["plan"]])
     rec("smoke_ex_quest_autochecked", page.evaluate("() => { const d=JSON.parse(localStorage.getItem('burn60_data')); return !!(d['2026-11-23'] && d['2026-11-23'].quests && d['2026-11-23'].quests.ex); }"), "ex")
-    rec("smoke_coach_msg", page.locator('[data-testid="coach-msg"]').count() > 0, "msg")
-    # zh copy
+    btn = page.locator('[data-testid="btn-primary"]').first
+    rec("smoke_primary_disabled_when_done", btn.is_disabled(), btn.inner_text())
+    # weight row: starts empty, save disabled until typed
+    c("row-weight-add"); page.wait_for_timeout(100)
+    wi = page.locator('[data-testid="input-weight"]').first
+    sv = page.locator('[data-testid="btn-weight-save"]').first
+    rec("smoke_weight_input_empty", wi.input_value() == "", wi.input_value())
+    rec("smoke_weight_save_disabled_empty", sv.is_disabled(), "disabled")
+    wi.fill("79.5"); page.wait_for_timeout(80)
+    rec("smoke_weight_save_enabled_typed", not page.locator('[data-testid="btn-weight-save"]').first.is_disabled(), "enabled")
+    page.locator('[data-testid="btn-weight-save"]').first.click(); page.wait_for_timeout(150)
+    rec("smoke_weight_saved", page.evaluate("() => JSON.parse(localStorage.getItem('burn60_data'))['2026-11-23'].weight") == 79.5, "79.5")
+    c("row-water-add"); page.wait_for_timeout(100)
+    rec("smoke_water_saved", page.evaluate("() => JSON.parse(localStorage.getItem('burn60_data'))['2026-11-23'].water") == 1, "1")
+    # zh
     page.evaluate("() => window.__burn60.setLang('zh')"); page.wait_for_timeout(120)
-    zt = page.locator('[data-testid="coach-card"]').first.inner_text()
-    rec("smoke_zh_coach_card", "楼梯" in zt or "轮" in zt, zt[:120])
-    page.screenshot(path=str(SHOT / "v3_04_zh.png"), full_page=True)
-    page.evaluate("() => window.__burn60.setLang('ko')")
-    # stop button -> S1 screen + lock
+    rec("smoke_zh_today", "轮" in page.locator('[data-testid="today-hero"]').first.inner_text(), page.locator('[data-testid="today-hero"]').first.inner_text()[:80])
+    page.evaluate("() => window.__burn60.setLang('ko')"); page.wait_for_timeout(80)
+    # tabs
+    rec("smoke_tabs_3", all(page.locator(f'[data-testid="{t}"]').count() > 0 for t in ("nav-today", "nav-log", "nav-settings")), "tabs")
+    c("nav-log"); page.wait_for_timeout(100)
+    rec("smoke_log_notes_list", page.locator('[data-testid="notes-list"]').count() > 0, "notes-list")
+    c("nav-settings"); page.wait_for_timeout(100)
+    rec("smoke_settings_backup_buttons", page.locator('[data-testid="btn-export"]').count() > 0 and page.locator('[data-testid="btn-coach-settings"]').count() > 0, "settings")
+    c("theme-dark"); page.wait_for_timeout(100)
+    rec("smoke_theme_dark", page.evaluate("() => document.documentElement.getAttribute('data-theme')") == "dark" and page.evaluate("() => localStorage.getItem('b60theme')") == "dark", "dark")
+    c("theme-light"); page.wait_for_timeout(80)
+    c("nav-today"); page.wait_for_timeout(100)
     c("btn-stop"); page.wait_for_timeout(150)
     s1 = page.locator('[data-testid="s1-screen"]')
     rec("smoke_stop_screen_119_120", s1.count() > 0 and "119" in s1.first.inner_text() and "120" in s1.first.inner_text(), s1.first.inner_text()[:160] if s1.count() else "missing")
-    # 3-tap is once per day: a second save must not change sessions/learn
-    page.evaluate("() => window.__burn60.setLang('ko')")
-    before = page.evaluate("() => [localStorage.getItem('burn60_sessions'), localStorage.getItem('burn60_learn')]")
-    rec("smoke_check_hidden_after_judged", page.locator('[data-testid="btn-check"]').count() == 0 and page.locator('[data-testid="btn-round-done"]').count() == 0, "buttons hidden")
-    page.evaluate("() => { saveCheckSheet(); doRoundDone(); }")
-    after = page.evaluate("() => [localStorage.getItem('burn60_sessions'), localStorage.getItem('burn60_learn')]")
-    rec("smoke_check_once_per_day", before == after, "unchanged")
     rec("smoke_errors_day1", err == [], err)
     ctx.close()
 
-    # weekly check-in: seed 7 days later with weights, reload
+    # weekly check-in screen
     ctx, page, err = new_page(browser)
     page.evaluate("""() => { const b=window.__burn60;
-      b.startChallenge({goal:'loss', sex:'m', age:35, height:175, startWeight:80, targetWeight:75, days:60, startDate:'2026-11-16', workType:'standing', preg:'no', ed:'none', med:'none'});
-      const d=JSON.parse(localStorage.getItem('burn60_data')); ['2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20'].forEach((k,i)=>{d[k]=Object.assign(d[k]||{},{weight:80-i*0.1})});
-      localStorage.setItem('burn60_data', JSON.stringify(d)); }""")
-    page.clock.set_system_time(datetime(2026, 11, 30, 9, 0, 0))  # Monday: first open of the week starting Sun 11-29, coach started 11-23
+      b.startChallenge({goal:'loss', sex:'m', age:35, height:175, startWeight:80, targetWeight:75, days:60, startDate:'2026-11-16', workType:'standing', preg:'no', ed:'none', med:'none'}); }""")
+    page.clock.set_system_time(datetime(2026, 11, 30, 9, 0, 0))
     page.reload(wait_until="domcontentloaded"); page.wait_for_timeout(300)
     note = page.locator('[data-testid="weekly-note"]')
     notes = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_notes')||'[]')")
     rec("smoke_weekly_checkin_note", note.count() > 0 and len(notes) == 1 and len(notes[0]["lines"]) == 3, notes)
-    page.screenshot(path=str(SHOT / "v3_05_weekly_note.png"), full_page=True)
+    rec("smoke_weekly_ok_button", page.locator('[data-testid="btn-weekly-ok"]').count() > 0, "ok btn")
+    page.locator('[data-testid="btn-weekly-ok"]').first.click(); page.wait_for_timeout(150)
+    rec("smoke_weekly_ack_returns_today", page.locator('[data-testid="weekly-note"]').count() == 0 and page.locator('[data-testid="today-hero"]').count() > 0, "today")
     page.reload(wait_until="domcontentloaded"); page.wait_for_timeout(200)
     notes2 = page.evaluate("() => JSON.parse(localStorage.getItem('burn60_notes')||'[]')")
     rec("smoke_checkin_once_per_week", len(notes2) == 1, len(notes2))
@@ -405,7 +437,7 @@ def main():
             try:
                 fn()
             except Exception as e:
-                import traceback; rec("exception", False, traceback.format_exc()[-600:])
+                import traceback; rec("exception", False, "\n".join(l for l in traceback.format_exc().splitlines() if "site-packages" not in l)[-1500:])
         browser.close()
     passed = sum(r["ok"] for r in results); failed = [r for r in results if not r["ok"]]
     print(f"\nSUMMARY {passed}/{len(results)} passed, {len(failed)} failed")

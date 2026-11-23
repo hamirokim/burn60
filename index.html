@@ -352,22 +352,20 @@ function calcCaloriePlan(plan){
   }
   return{bmr,tdee,bmrRound:Math.round(bmr),tdeeRound:Math.round(tdee),floor,recMin,recMax,recTarget,clamped};
 }
-function canStart(plan){
+function checkBodyAndRate(plan){
   if(!plan||typeof plan!=="object")return{ok:false,blocked:true,code:"invalid",reason:"Invalid plan"};
   const goal=plan.goal||"loss";
-  const sex=plan.sex||"m";
-  const sw=Number(plan.startWeight),tw=Number(plan.targetWeight),ht=Number(plan.height),age=Number(plan.age),days=Number(plan.totalDays||plan.days);
-  if(sex==="f"&&plan.preg==="yes"){
-    return{ok:false,blocked:true,safetyStop:true,code:"preg_stop",reason:lang==="zh"?"孕期或哺乳期请停止使用并咨询专科医生。":"임신·수유 중에는 도전을 시작할 수 없습니다. 전문의와 상담하세요."};
+  const sex=plan.sex;
+  if(sex!=="m"&&sex!=="f"){
+    return{ok:false,blocked:true,code:"sex",reason:lang==="zh"?"请选择生理性别。":"성별을 선택하세요."};
   }
-  if(plan.ed==="high"){
-    return{ok:false,blocked:true,safetyStop:true,code:"ed_stop",reason:lang==="zh"?"存在高频极端节食或暴食风险，请停止使用并寻求专业医疗帮助。":"섭식장애(극단 절식·폭식) 고위험군으로 도전을 시작할 수 없습니다. 전문의 상담을 권장합니다."};
-  }
-  if(!sw||sw<30||sw>300||!tw||tw<30||tw>300||!ht||ht<100||ht>250||!age||age<15||age>100||!days||days<7||days>180){
+  const rawAge=plan.age,rawHt=plan.height,rawSw=plan.startWeight,rawTw=goal==="maintain"?plan.startWeight:plan.targetWeight,rawDays=plan.totalDays!==undefined?plan.totalDays:plan.days;
+  if(rawAge===""||rawAge===null||rawAge===undefined||rawHt===""||rawHt===null||rawHt===undefined||rawSw===""||rawSw===null||rawSw===undefined||rawTw===""||rawTw===null||rawTw===undefined||rawDays===""||rawDays===null||rawDays===undefined){
     return{ok:false,blocked:true,code:"range",reason:lang==="zh"?"请输入有效的身体数据与天数(7~180天)。":"나이, 키, 체중, 기간(7~180일)을 올바르게 입력하세요."};
   }
-  if(plan.med&&plan.med!=="none"&&!plan.medAck){
-    return{ok:false,blocked:true,code:"med_ack",reason:lang==="zh"?"请确认已与医生沟通后再继续。":"질환·복용 약이 있는 경우 '의사와 상의 후 진행' 확인이 필요합니다."};
+  const sw=Number(rawSw),tw=Number(rawTw),ht=Number(rawHt),age=Number(rawAge),days=Number(rawDays);
+  if(!sw||sw<30||sw>300||!tw||tw<30||tw>300||!ht||ht<100||ht>250||!age||age<15||age>100||!days||days<7||days>180){
+    return{ok:false,blocked:true,code:"range",reason:lang==="zh"?"请输入有效的身体数据与天数(7~180天)。":"나이, 키, 체중, 기간(7~180일)을 올바르게 입력하세요."};
   }
   const hM=ht/100,bmi=sw/(hM*hM);
   if(goal==="loss"){
@@ -394,6 +392,31 @@ function canStart(plan){
     }
   }
   return{ok:true,blocked:false,code:"ok",rate:calcWeeklyRate(sw,tw,days)};
+}
+function canStart(plan){
+  if(!plan||typeof plan!=="object")return{ok:false,blocked:true,code:"invalid",reason:"Invalid plan"};
+  const sex=plan.sex;
+  if(sex==="f"&&plan.preg==="yes"){
+    return{ok:false,blocked:true,safetyStop:true,code:"preg_stop",reason:lang==="zh"?"孕期或哺乳期请停止使用并咨询专科医生。":"임신·수유 중에는 도전을 시작할 수 없습니다. 전문의와 상담하세요."};
+  }
+  if(plan.ed==="high"){
+    return{ok:false,blocked:true,safetyStop:true,code:"ed_stop",reason:lang==="zh"?"存在高频极端节食或暴食风险，请停止使用并寻求专业医疗帮助。":"섭식장애(극단 절식·폭식) 고위험군으로 도전을 시작할 수 없습니다. 전문의 상담을 권장합니다."};
+  }
+  const bodyChk=checkBodyAndRate(plan);
+  if(!bodyChk.ok)return bodyChk;
+  if(!plan.med){
+    return{ok:false,blocked:true,code:"med_req",reason:lang==="zh"?"请选择慢性疾病或服药情况。":"질환·복용 중인 약 문항을 선택해주세요."};
+  }
+  if(plan.med!=="none"&&!plan.medAck){
+    return{ok:false,blocked:true,code:"med_ack",reason:lang==="zh"?"请确认已与医生沟通后再继续。":"질환·복용 약이 있는 경우 '의사와 상의 후 진행' 확인이 필요합니다."};
+  }
+  if(sex==="f"&&!plan.preg){
+    return{ok:false,blocked:true,code:"preg_req",reason:lang==="zh"?"请选择是否处于孕期或哺乳期。":"임신·수유 여부를 선택해주세요."};
+  }
+  if(!plan.ed){
+    return{ok:false,blocked:true,code:"ed_req",reason:lang==="zh"?"请选择进食障碍经历情况。":"섭식장애 경험 문항을 선택해주세요."};
+  }
+  return bodyChk;
 }
 
 // ═══ STEP 5: Dynamic Quests by Mode, Preset, Muscle & Pain Substitution ═══
@@ -613,43 +636,73 @@ function handleImportFile(ev){
 
 // ═══ STEP 4: COACH ONBOARDING STATE & UI ═══
 let obStep=1;
-let ob={
-  goal:"loss",
-  muscle:false,
-  days:60,
-  sex:"m",
-  age:35,
-  height:175,
-  startWeight:80,
-  targetWeight:75,
-  med:"none",
-  medAck:false,
-  pains:["none"],
-  preg:"no",
-  ed:"none",
-  workType:"standing",
-  mealType:"out",
-  allergy:"none",
-  allergyMemo:"",
-  exTime:"10",
-  exPlace:"shop",
-  preset:"flex",
-  presetTouched:false,
-  sleep:"normal",
-  budget:"mid",
-  cuisine:"ko",
-  exp:"beginner",
-  motive:""
-};
+function defaultOb(){
+  return{
+    goal:"loss",
+    muscle:false,
+    days:60,
+    sex:"",
+    age:"",
+    height:"",
+    startWeight:"",
+    targetWeight:"",
+    med:"",
+    medAck:false,
+    pains:["none"],
+    preg:"",
+    ed:"",
+    workType:"standing",
+    mealType:"out",
+    allergy:"none",
+    allergyMemo:"",
+    exTime:"10",
+    exPlace:"shop",
+    preset:"flex",
+    presetTouched:false,
+    sleep:"normal",
+    budget:"mid",
+    cuisine:"ko",
+    exp:"beginner",
+    motive:""
+  };
+}
+let ob=defaultOb();
+function fmtIn(v){return(v===undefined||v===null||v===""||Number.isNaN(v))?"":String(v)}
 function syncObInputs(){
-  const dEl=document.getElementById("s-d");if(dEl&&dEl.value)ob.days=parseInt(dEl.value,10)||ob.days;
-  const aEl=document.getElementById("s-age");if(aEl&&aEl.value)ob.age=parseInt(aEl.value,10)||ob.age;
-  const hEl=document.getElementById("s-ht");if(hEl&&hEl.value)ob.height=parseFloat(hEl.value)||ob.height;
-  const swEl=document.getElementById("s-sw");if(swEl&&swEl.value){
-    ob.startWeight=parseFloat(swEl.value)||ob.startWeight;
+  const dEl=document.getElementById("s-d");
+  if(dEl){
+    const raw=dEl.value.trim();
+    if(raw===""){ob.days="";}
+    else{const v=parseInt(raw,10);ob.days=Number.isNaN(v)?"":v;}
+  }
+  const aEl=document.getElementById("s-age");
+  if(aEl){
+    const raw=aEl.value.trim();
+    if(raw===""){ob.age="";}
+    else{const v=parseInt(raw,10);ob.age=Number.isNaN(v)?"":v;}
+  }
+  const hEl=document.getElementById("s-ht");
+  if(hEl){
+    const raw=hEl.value.trim();
+    if(raw===""){ob.height="";}
+    else{const v=parseFloat(raw);ob.height=Number.isNaN(v)?"":v;}
+  }
+  const swEl=document.getElementById("s-sw");
+  if(swEl){
+    const raw=swEl.value.trim();
+    if(raw===""){ob.startWeight="";}
+    else{const v=parseFloat(raw);ob.startWeight=Number.isNaN(v)?"":v;}
     if(ob.goal==="maintain")ob.targetWeight=ob.startWeight;
   }
-  const twEl=document.getElementById("s-tw");if(twEl&&twEl.value)ob.targetWeight=parseFloat(twEl.value)||ob.targetWeight;
+  const twEl=document.getElementById("s-tw");
+  if(twEl){
+    if(ob.goal==="maintain"){ob.targetWeight=ob.startWeight;}
+    else{
+      const raw=twEl.value.trim();
+      if(raw===""){ob.targetWeight="";}
+      else{const v=parseFloat(raw);ob.targetWeight=Number.isNaN(v)?"":v;}
+    }
+  }
   const alEl=document.getElementById("s-allergy-memo");if(alEl)ob.allergyMemo=alEl.value;
   const moEl=document.getElementById("s-motive");if(moEl)ob.motive=moEl.value;
 }
@@ -657,8 +710,6 @@ function setObGoal(g){
   syncObInputs();
   ob.goal=g;
   if(g==="maintain")ob.targetWeight=ob.startWeight;
-  else if(g==="loss"&&ob.targetWeight>=ob.startWeight)ob.targetWeight=Math.max(35,Number((ob.startWeight-3).toFixed(1)));
-  else if(g==="gain"&&ob.targetWeight<=ob.startWeight)ob.targetWeight=Number((ob.startWeight+3).toFixed(1));
   render();
 }
 function setObDays(d){
@@ -673,7 +724,12 @@ function setObField(k,v){
     ob.preset=(v==="out"||v==="fam"||v==="deliv")?"flex":"legacy";
   }
   if(k==="preset")ob.presetTouched=true;
-  if(k==="sex"&&v==="m")ob.preg="no";
+  if(k==="sex"){
+    ob.preg="";
+  }
+  if(k==="med"&&v==="none"){
+    ob.medAck=false;
+  }
   render();
 }
 function toggleObPain(p){
@@ -692,13 +748,16 @@ function obNext(){
     if(!ob.days||ob.days<7||ob.days>180){toast(lang==="zh"?"挑战天数需在 7~180 天之间":"기간은 7~180일 사이로 설정하세요");return}
   }
   if(obStep===2){
-    const chk=canStart(Object.assign({},ob,{totalDays:ob.days,med:"none",preg:"no",ed:"none"}));
+    const chk=checkBodyAndRate(Object.assign({},ob,{totalDays:ob.days}));
     if(!chk.ok){toast(chk.reason);return}
   }
   if(obStep===3){
     if(ob.sex==="f"&&ob.preg==="yes"){toast(lang==="zh"?"孕期/哺乳期无法开始挑战":"임신·수유 중에는 시작할 수 없습니다");return}
     if(ob.ed==="high"){toast(lang==="zh"?"高风险进食障碍请咨询医生":"섭식장애 고위험군은 시작할 수 없습니다");return}
+    if(!ob.med){toast(lang==="zh"?"请选择慢性疾病或服药情况":"질환·복용 중인 약 문항을 선택해주세요");return}
     if(ob.med!=="none"&&!ob.medAck){toast(lang==="zh"?"请勾选已与医生沟通确认":"'의사와 상의 후 진행'에 체크해주세요");return}
+    if(ob.sex==="f"&&!ob.preg){toast(lang==="zh"?"请选择是否处于孕期或哺乳期":"임신·수유 여부를 선택해주세요");return}
+    if(!ob.ed){toast(lang==="zh"?"请选择进食障碍经历情况":"섭식장애 경험 문항을 선택해주세요");return}
   }
   if(obStep<5){obStep++;render()}
 }
@@ -710,11 +769,53 @@ function obSkipOptional(){
   syncObInputs();
   startC();
 }
+function hasValidBodyForTdee(p){
+  if(!p||typeof p!=="object")return false;
+  if(p.sex!=="m"&&p.sex!=="f")return false;
+  if(p.age===""||p.age===null||p.age===undefined||p.height===""||p.height===null||p.height===undefined||p.startWeight===""||p.startWeight===null||p.startWeight===undefined)return false;
+  const sw=Number(p.startWeight),ht=Number(p.height),age=Number(p.age);
+  if(!sw||sw<30||sw>300||!ht||ht<100||ht>250||!age||age<15||age>100)return false;
+  return true;
+}
+function renderStep2Dynamic(){
+  const z=lang==="zh";
+  const showTdee=hasValidBodyForTdee(ob);
+  const rawTw=ob.goal==="maintain"?ob.startWeight:ob.targetWeight;
+  const twNum=(rawTw===""||rawTw===null||rawTw===undefined)?NaN:Number(rawTw);
+  const twValid=!!(twNum&&twNum>=30&&twNum<=300);
+  const cal=showTdee?calcCaloriePlan(ob):null;
+  const rate=(showTdee&&twValid)?calcWeeklyRate(ob.startWeight,twNum,ob.days):0;
+  const guard=checkBodyAndRate(Object.assign({},ob,{totalDays:ob.days}));
+  let h="";
+  if(showTdee&&cal){
+    h+=`<div class="tdee-box" data-testid="tdee-preview">
+      <div>⚡ <b>BMR</b>: <span data-testid="val-bmr">${cal.bmrRound.toLocaleString()}</span> kcal · <b>TDEE</b>: <span data-testid="val-tdee">${cal.tdeeRound.toLocaleString()}</span> kcal</div>
+      <div>🍽️ <b>${z?"建议每日摄入":"권장 일일 섭취량"}</b>: <span data-testid="val-reccal">${cal.recMin.toLocaleString()}~${cal.recMax.toLocaleString()}</span> kcal</div>
+      ${cal.clamped?`<div style="color:var(--ny);font-size:10px;margin-top:2px">* ${z?`已应用安全下限 (${cal.floor} kcal)`:`안전 하한선(${cal.floor.toLocaleString()} kcal)으로 보정됨`}</div>`:""}
+      ${(ob.goal==="loss"&&twValid)?`<div style="font-size:10px;color:#889;margin-top:2px">${z?"预计周减重速度":"예상 주당 감량 속도"}: <b>${rate.toFixed(2)} kg/${z?"周":"주"}</b></div>`:""}
+    </div>`;
+  }
+  if(!guard.ok&&(guard.code==="underweight"||guard.code==="loss_dir"||guard.code==="gain_dir"||guard.code==="rate_over_2"||guard.code==="rate_over_1"||guard.code==="gain_rate")){
+    h+=`<div class="${guard.warn?"ob-warn":"ob-stop"}" data-testid="guard-msg">
+      <div>${guard.reason}</div>
+      ${(guard.code==="loss_dir")?`<button type="button" class="ob-btn2" style="margin-top:6px" data-testid="btn-switch-gain" onclick="setObGoal('gain')">${z?"切换为增重模式":"증량 모드로 전환"}</button>`:""}
+      ${(guard.code==="gain_dir")?`<button type="button" class="ob-btn2" style="margin-top:6px" data-testid="btn-switch-loss" onclick="setObGoal('loss')">${z?"切换为减重模式":"감량 모드로 전환"}</button>`:""}
+    </div>`;
+  }
+  return h;
+}
+function onStep2Input(){
+  syncObInputs();
+  if(ob.goal==="maintain"){
+    const twEl=document.getElementById("s-tw");
+    if(twEl)twEl.value=fmtIn(ob.startWeight);
+  }
+  const dyn=document.getElementById("ob-step2-dyn");
+  if(dyn)dyn.innerHTML=renderStep2Dynamic();
+  else render();
+}
 function renderOnboarding(){
   const z=lang==="zh";
-  const cal=calcCaloriePlan(ob);
-  const guard=canStart(Object.assign({},ob,{totalDays:ob.days}));
-  const rate=calcWeeklyRate(ob.startWeight,ob.targetWeight,ob.days);
   let stepHtml="";
 
   if(obStep===1){
@@ -736,7 +837,7 @@ function renderOnboarding(){
         </div>
         <div class="sf" style="margin-bottom:6px">
           <label class="sl" for="s-d">${z?"自定义天数 (7~180)":"직접 입력 (7~180일)"}</label>
-          <input class="si" type="number" min="7" max="180" id="s-d" data-testid="input-days" value="${ob.days}" onchange="setObDays(parseInt(this.value,10)||60)">
+          <input class="si" type="number" min="7" max="180" id="s-d" data-testid="input-days" value="${fmtIn(ob.days)}" oninput="syncObInputs()" onchange="syncObInputs();render()">
         </div>
       </div>
       <div class="ob-nav">
@@ -752,25 +853,14 @@ function renderOnboarding(){
           <button type="button" class="ob-opt ${ob.sex==="f"?"on":""}" data-testid="opt-sex-f" onclick="setObField('sex','f')">👩 ${z?"女性":"여성"}</button>
         </div>
         <div class="sr">
-          <div class="sf"><label class="sl" for="s-age">4. ${z?"年龄 (岁)":"나이 (세)"}</label><input class="si" type="number" id="s-age" data-testid="input-age" value="${ob.age}" oninput="syncObInputs();render()"></div>
-          <div class="sf"><label class="sl" for="s-ht">${t("height")} (cm)</label><input class="si" type="number" id="s-ht" data-testid="input-height" value="${ob.height}" oninput="syncObInputs();render()"></div>
+          <div class="sf"><label class="sl" for="s-age">4. ${z?"年龄 (岁)":"나이 (세)"}</label><input class="si" type="number" id="s-age" data-testid="input-age" value="${fmtIn(ob.age)}" oninput="onStep2Input()" onchange="onStep2Input()"></div>
+          <div class="sf"><label class="sl" for="s-ht">${t("height")} (cm)</label><input class="si" type="number" id="s-ht" data-testid="input-height" value="${fmtIn(ob.height)}" oninput="onStep2Input()" onchange="onStep2Input()"></div>
         </div>
         <div class="sr">
-          <div class="sf"><label class="sl" for="s-sw">${t("curW")} (kg)</label><input class="si" type="number" step="0.1" id="s-sw" data-testid="input-sw" value="${ob.startWeight}" oninput="syncObInputs();render()"></div>
-          <div class="sf"><label class="sl" for="s-tw">5. ${t("goalW")} (kg)</label><input class="si" type="number" step="0.1" id="s-tw" data-testid="input-tw" value="${ob.goal==="maintain"?ob.startWeight:ob.targetWeight}" ${ob.goal==="maintain"?"readonly":""} oninput="syncObInputs();render()"></div>
+          <div class="sf"><label class="sl" for="s-sw">${t("curW")} (kg)</label><input class="si" type="number" step="0.1" id="s-sw" data-testid="input-sw" value="${fmtIn(ob.startWeight)}" oninput="onStep2Input()" onchange="onStep2Input()"></div>
+          <div class="sf"><label class="sl" for="s-tw">5. ${t("goalW")} (kg)</label><input class="si" type="number" step="0.1" id="s-tw" data-testid="input-tw" value="${fmtIn(ob.goal==="maintain"?ob.startWeight:ob.targetWeight)}" ${ob.goal==="maintain"?"readonly":""} oninput="onStep2Input()" onchange="onStep2Input()"></div>
         </div>
-        <div class="tdee-box" data-testid="tdee-preview">
-          <div>⚡ <b>BMR</b>: <span data-testid="val-bmr">${cal.bmrRound.toLocaleString()}</span> kcal · <b>TDEE</b>: <span data-testid="val-tdee">${cal.tdeeRound.toLocaleString()}</span> kcal</div>
-          <div>🍽️ <b>${z?"建议每日摄入":"권장 일일 섭취량"}</b>: <span data-testid="val-reccal">${cal.recMin.toLocaleString()}~${cal.recMax.toLocaleString()}</span> kcal</div>
-          ${cal.clamped?`<div style="color:var(--ny);font-size:10px;margin-top:2px">* ${z?`已应用安全下限 (${cal.floor} kcal)`:`안전 하한선(${cal.floor.toLocaleString()} kcal)으로 보정됨`}</div>`:""}
-          ${ob.goal==="loss"?`<div style="font-size:10px;color:#889;margin-top:2px">${z?"预计周减重速度":"예상 주당 감량 속도"}: <b>${rate.toFixed(2)} kg/${z?"周":"주"}</b></div>`:""}
-        </div>
-        ${(!guard.ok&&(guard.code==="underweight"||guard.code==="loss_dir"||guard.code==="gain_dir"||guard.code==="rate_over_2"||guard.code==="rate_over_1"||guard.code==="gain_rate"))?`
-          <div class="${guard.warn?"ob-warn":"ob-stop"}" data-testid="guard-msg">
-            <div>${guard.reason}</div>
-            ${(guard.code==="loss_dir")?`<button type="button" class="ob-btn2" style="margin-top:6px" data-testid="btn-switch-gain" onclick="setObGoal('gain')">${z?"切换为增重模式":"증량 모드로 전환"}</button>`:""}
-            ${(guard.code==="gain_dir")?`<button type="button" class="ob-btn2" style="margin-top:6px" data-testid="btn-switch-loss" onclick="setObGoal('loss')">${z?"切换为减重模式":"감량 모드로 전환"}</button>`:""}
-          </div>`:""}
+        <div id="ob-step2-dyn">${renderStep2Dynamic()}</div>
       </div>
       <div class="ob-nav">
         <button type="button" class="ob-btn2" data-testid="btn-prev" onclick="obPrev()">← ${z?"上一步":"이전"}</button>
@@ -785,7 +875,7 @@ function renderOnboarding(){
         <div class="ob-opts">
           ${[["none",z?"无":"없음"],["bp",z?"高血压/心脏":"고혈압·심장"],["dm",z?"糖尿病":"당뇨"],["kid",z?"肾脏疾病":"신장"],["etc",z?"其他":"기타"]].map(([k,l])=>`<button type="button" class="ob-opt ${ob.med===k?"on":""}" data-testid="opt-med-${k}" onclick="setObField('med','${k}')">${l}</button>`).join("")}
         </div>
-        ${ob.med!=="none"?`<div class="ob-warn"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" data-testid="chk-med-ack" ${ob.medAck?"checked":""} onchange="setObField('medAck',this.checked)"><span>${z?"我已咨询医生并确认可以执行饮食与运动计划":"의사와 상의 후 진행함을 확인합니다"}</span></label></div>`:""}
+        ${(ob.med&&ob.med!=="none")?`<div class="ob-warn"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" data-testid="chk-med-ack" ${ob.medAck?"checked":""} onchange="setObField('medAck',this.checked)"><span>${z?"我已咨询医生并确认可以执行饮食与运动计划":"의사와 상의 후 진행함을 확인합니다"}</span></label></div>`:""}
         <div class="ob-q" data-testid="q-pain">7. ${z?"关节疼痛或损伤（可多选，自动替换动作）":"통증·부상 부위 (복수 선택 가능, 맞춤 운동 대체)"}</div>
         <div class="ob-opts">
           ${[["none",z?"无":"없음"],["knee",z?"膝盖":"무릎"],["back",z?"腰部":"허리"],["wrist",z?"手腕/肩膀":"손목·어깨"],["ankle",z?"脚踝":"발목"]].map(([k,l])=>`<button type="button" class="ob-opt ${ob.pains.includes(k)?"on":""}" data-testid="opt-pain-${k}" onclick="toggleObPain('${k}')">${l}</button>`).join("")}
@@ -945,11 +1035,25 @@ app.innerHTML=`<div class="hdr"><div class="logo">🔥 ${t("appTitle")}</div><di
 
 function startC(customPlan){
   syncObInputs();
-  const p=customPlan||ob;
-  const sw=parseFloat(p.startWeight),ht=parseFloat(p.height),age=parseInt(p.age,10)||35,days=parseInt(p.totalDays||p.days,10);
-  const goal=p.goal||"loss";
-  const tw=goal==="maintain"?sw:parseFloat(p.targetWeight);
-  const fullPlan=Object.assign({},ob,p,{goal,startWeight:sw,targetWeight:tw,height:ht,age,totalDays:days,days});
+  const isHook=!!(customPlan&&typeof customPlan==="object");
+  const p=isHook?customPlan:ob;
+  const rawSw=(isHook&&"startWeight" in customPlan)?customPlan.startWeight:p.startWeight;
+  const rawHt=(isHook&&"height" in customPlan)?customPlan.height:p.height;
+  const rawAge=(isHook&&"age" in customPlan)?customPlan.age:p.age;
+  const rawDays=(isHook&&("totalDays" in customPlan||"days" in customPlan))?(customPlan.totalDays!==undefined?customPlan.totalDays:customPlan.days):(p.totalDays!==undefined?p.totalDays:(p.days!==undefined?p.days:ob.days));
+  const sex=(isHook&&"sex" in customPlan)?customPlan.sex:p.sex;
+  const sw=(rawSw===""||rawSw===null||rawSw===undefined)?NaN:parseFloat(rawSw);
+  const ht=(rawHt===""||rawHt===null||rawHt===undefined)?NaN:parseFloat(rawHt);
+  const age=(rawAge===""||rawAge===null||rawAge===undefined)?NaN:parseInt(rawAge,10);
+  const days=(rawDays===""||rawDays===null||rawDays===undefined)?NaN:parseInt(rawDays,10);
+  const goal=p.goal||ob.goal||"loss";
+  const rawTw=(isHook&&"targetWeight" in customPlan)?customPlan.targetWeight:p.targetWeight;
+  const tw=goal==="maintain"?sw:((rawTw===""||rawTw===null||rawTw===undefined)?NaN:parseFloat(rawTw));
+  const hookExplicitAgeSex=isHook&&("age" in customPlan)&&("sex" in customPlan);
+  const med=isHook?(("med" in customPlan)?customPlan.med:(ob.med||(hookExplicitAgeSex?"none":""))):ob.med;
+  const ed=isHook?(("ed" in customPlan)?customPlan.ed:(ob.ed||(hookExplicitAgeSex?"none":""))):ob.ed;
+  const preg=isHook?(("preg" in customPlan)?customPlan.preg:(ob.preg||(hookExplicitAgeSex?(sex==="f"?"no":""):""))):ob.preg;
+  const fullPlan=Object.assign({},ob,p,{goal,sex,startWeight:sw,targetWeight:tw,height:ht,age,totalDays:days,days,med,ed,preg});
   const check=canStart(fullPlan);
   if(!check.ok){
     toast(check.reason);
@@ -962,7 +1066,7 @@ function startC(customPlan){
     schemaVersion:2,
     goal,
     muscle:!!fullPlan.muscle,
-    sex:fullPlan.sex||"m",
+    sex:fullPlan.sex,
     age,
     height:ht,
     startWeight:sw,
@@ -970,11 +1074,11 @@ function startC(customPlan){
     totalDays:days,
     startDate,
     endDate,
-    med:fullPlan.med||"none",
+    med:fullPlan.med,
     medAck:!!fullPlan.medAck,
     pains:Array.isArray(fullPlan.pains)?fullPlan.pains:["none"],
-    preg:fullPlan.preg||"no",
-    ed:fullPlan.ed||"none",
+    preg:fullPlan.sex==="f"?fullPlan.preg:"no",
+    ed:fullPlan.ed,
     workType:fullPlan.workType||"standing",
     pal:resolvePal(fullPlan.pal||fullPlan.workType),
     mealType:fullPlan.mealType||"out",
@@ -1000,8 +1104,8 @@ function startC(customPlan){
   return{ok:true,cfg};
 }
 function saveW(){const v=parseFloat(document.getElementById("wi").value);if(v>30&&v<300)sdf(td(),"weight",v);else toast(lang==="zh"?"请输入有效体重":"유효한 체중")}
-function endC(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"确定结束？":"종료할까요?")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};obStep=1;curView="quest";render()}}
-function resetAll(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};obStep=1;curView="quest";render()}}
+function endC(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"确定结束？":"종료할까요?")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};ob=defaultOb();obStep=1;curView="quest";render()}}
+function resetAll(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};ob=defaultOb();obStep=1;curView="quest";render()}}
 
 // ═══ TEST & VERIFICATION HOOKS ═══
 window.__burn60={

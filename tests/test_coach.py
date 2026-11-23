@@ -346,6 +346,11 @@ def smoke(browser):
     rec("smoke_onboarding_started", page.evaluate("() => window.__burn60.getConfig()") is not None and coach and coach["plan"]["mode"] == "stairs" and coach["plan"]["R"] == 3 and coach["plan"]["N"] == 2, (coach or {}).get("plan"))
     hero = page.locator('[data-testid="hero-count"]')
     rec("smoke_today_hero_0_of_2", hero.count() > 0 and hero.first.inner_text().replace(" ", "") == "0/2", hero.first.inner_text() if hero.count() else "missing")
+    page.evaluate("() => toast('x')"); page.wait_for_timeout(50)
+    tb = page.evaluate("""() => { const t=document.getElementById('toast').getBoundingClientRect(); const ctl=[...document.querySelectorAll('#app button,#app input,#app summary,#app a')].filter(e=>e.offsetParent!==null);
+      const hit=ctl.filter(e=>{const r=e.getBoundingClientRect(); return !(r.bottom<=t.top||r.top>=t.bottom||r.right<=t.left||r.left>=t.right)}).map(e=>e.dataset.testid||e.tagName);
+      return {visible:!document.getElementById('toast').classList.contains('hide'), hit}; }""")
+    rec("smoke_toast_covers_no_controls", tb["visible"] and tb["hit"] == [], tb)
     btn = page.locator('[data-testid="btn-primary"]')
     rec("smoke_primary_round", btn.count() > 0 and btn.first.get_attribute("data-state") == "round" and "이 라운드 완료" in btn.first.inner_text(), btn.first.inner_text() if btn.count() else "missing")
     exq = page.evaluate("() => window.__burn60.getQuests().find(q=>q.id==='ex')")
@@ -354,6 +359,8 @@ def smoke(browser):
     # round 1: full 3-tap
     c("btn-primary"); page.wait_for_timeout(150)
     rec("smoke_check_sheet_open", page.locator('[data-testid="check-sheet"]').count() > 0 and page.locator('[data-testid="talk-3"]').count() > 0, "sheet")
+    page.evaluate("() => toast('x')"); page.wait_for_timeout(50)
+    rec("smoke_toast_suppressed_on_sheet", page.evaluate("() => document.getElementById('toast').classList.contains('hide')"), "toast hidden on 3-tap")
     c("talk-3"); page.wait_for_timeout(80); c("pain-0"); page.wait_for_timeout(80)
     rec("smoke_step3_visible", page.locator('[data-testid="done-all"]').count() > 0, "step3")
     c("done-all"); page.wait_for_timeout(200)

@@ -168,6 +168,22 @@ body{font-family:-apple-system,'PingFang SC','Noto Sans SC',sans-serif;backgroun
 .ob-warn{padding:10px 12px;border-radius:10px;background:rgba(240,255,0,.08);border:1px solid rgba(240,255,0,.3);color:var(--ny);font-size:11px;line-height:1.5;margin-bottom:10px}
 .ob-stop{padding:12px;border-radius:10px;background:rgba(255,45,123,.12);border:1px solid rgba(255,45,123,.4);color:var(--np);font-size:12px;font-weight:700;line-height:1.5;margin-bottom:10px}
 .tdee-box{padding:10px 12px;border-radius:10px;background:rgba(0,255,242,.05);border:1px solid rgba(0,255,242,.2);font-size:11px;line-height:1.6;margin-bottom:10px}
+/* v3 adaptive coach */
+.cc-card{background:linear-gradient(135deg,rgba(0,255,242,.07),rgba(0,128,255,.05));border:1px solid rgba(0,255,242,.25);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 0 20px rgba(0,255,242,.08)}
+.cc-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cc-ttl{font-size:13px;font-weight:800;color:var(--cy)}
+.cc-prog{font-size:11px;font-weight:700;color:var(--ny);font-family:monospace}
+.cc-desc{font-size:12px;color:#eef;line-height:1.5;margin-bottom:8px}
+.cc-msg{font-size:11px;color:var(--ny);background:rgba(240,255,0,.08);border:1px solid rgba(240,255,0,.25);border-radius:10px;padding:8px 10px;margin-bottom:8px;line-height:1.4}
+.cc-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cc-btn{flex:1 1 calc(50% - 6px);padding:10px 8px;border-radius:10px;border:1px solid var(--gborder2);background:var(--glass2);color:#fff;font-size:11px;font-weight:700;cursor:pointer;text-align:center}
+.cc-btn.pri{background:linear-gradient(135deg,var(--cy),var(--eb));color:#000;border:none;font-weight:800}
+.cc-btn.warn{border-color:rgba(255,45,123,.4);color:var(--np);background:rgba(255,45,123,.08)}
+.cc-stop{margin-top:8px;font-size:10px;color:#99a;background:rgba(255,255,255,.03);border:1px solid var(--gborder);border-radius:10px;padding:8px 10px;line-height:1.5}
+.cc-stop summary{cursor:pointer;font-weight:700;color:#bbc;outline:none}
+.cc-sheet{background:rgba(12,12,24,.97);border:1px solid rgba(0,255,242,.3);border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 0 30px rgba(0,0,0,.6)}
+.cc-sttl{font-size:12px;font-weight:700;color:var(--cy);margin:8px 0 6px}
+.note-card{background:rgba(240,255,0,.06);border:1px solid rgba(240,255,0,.3);border-radius:14px;padding:12px;margin-bottom:10px;font-size:11px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -194,7 +210,7 @@ function syncDocLang(){
 function setLang(l){lang=l==="zh"?"zh":"ko";try{localStorage.setItem("b60lang",lang)}catch(e){}syncDocLang();render()}
 function toggleLang(){setLang(lang==="zh"?"ko":"zh")}
 syncDocLang();
-const CK="burn60_config",DK="burn60_data",UK="burn60_user";
+const CK="burn60_config",DK="burn60_data",UK="burn60_user",COK="burn60_coach",SEK="burn60_sessions",LEK="burn60_learn",NOK="burn60_notes";
 const DCATS=[
 {icon:"🍲",nKo:"찌개류",nZh:"锅类",noteKo:"밥 반 공기",noteZh:"半碗饭",items:[{ko:"순두부찌개",zh:"嫩豆腐锅"},{ko:"된장찌개",zh:"大酱汤"},{ko:"김치찌개",zh:"泡菜锅"},{ko:"매운탕",zh:"辣鱼汤"}]},
 {icon:"🫕",nKo:"찜·조림",nZh:"蒸炖",noteKo:"밥 적게 또는 없이",noteZh:"少饭或无饭",items:[{ko:"야채찜",zh:"蔬菜蒸"},{ko:"아구찜",zh:"安康鱼蒸"},{ko:"해물찜",zh:"海鲜蒸"},{ko:"코다리찜",zh:"明太鱼蒸"},{ko:"갈치조림",zh:"带鱼炖"},{ko:"닭볶음탕",zh:"鸡炖汤"}]},
@@ -288,10 +304,11 @@ function purgeLegacyIfNeeded(){
     if(rawC!==null||rawD!==null||rawU!==null){
       let parsed=null;
       try{parsed=rawC?JSON.parse(rawC):null}catch(e){parsed=null}
-      if(!parsed||typeof parsed!=="object"||parsed.schemaVersion!==2){
-        localStorage.removeItem(CK);
-        localStorage.removeItem(DK);
-        localStorage.removeItem(UK);
+      if(!parsed||typeof parsed!=="object"||(parsed.schemaVersion!==2&&parsed.schemaVersion!==3)){
+        [CK,DK,UK,COK,SEK,LEK,NOK].forEach(k=>localStorage.removeItem(k));
+      }else if(parsed.schemaVersion===2){
+        parsed.schemaVersion=3;
+        localStorage.setItem(CK,JSON.stringify(parsed));
       }
     }
   }catch(e){}
@@ -300,16 +317,646 @@ purgeLegacyIfNeeded();
 function loadC(){
   try{
     const c=JSON.parse(localStorage.getItem(CK));
-    if(c&&typeof c==="object"&&c.schemaVersion===2)return c;
+    if(c&&typeof c==="object"&&(c.schemaVersion===2||c.schemaVersion===3)){
+      if(c.schemaVersion===2){c.schemaVersion=3;saveC(c)}
+      return c;
+    }
     return null;
   }catch(e){return null}
 }
-function saveC(c){try{localStorage.setItem(CK,JSON.stringify(c))}catch(e){}}
+const _lastRaw={};
+function _trackRaw(k){try{_lastRaw[k]=localStorage.getItem(k)}catch(e){}}
+function saveC(c){try{localStorage.setItem(CK,JSON.stringify(c));_trackRaw(CK)}catch(e){}}
 function loadD(){try{const d=JSON.parse(localStorage.getItem(DK)||"{}");return(d&&typeof d==="object"&&!Array.isArray(d))?d:{}}catch(e){return{}}}
-function saveD(d){try{localStorage.setItem(DK,JSON.stringify(d))}catch(e){}}
+function saveD(d){try{localStorage.setItem(DK,JSON.stringify(d));_trackRaw(DK)}catch(e){}}
 function loadU(){try{const u=JSON.parse(localStorage.getItem(UK)||'{"xp":0}');return(u&&typeof u==="object"&&typeof u.xp==="number")?u:{xp:0}}catch(e){return{xp:0}}}
-function saveU(u){try{localStorage.setItem(UK,JSON.stringify(u))}catch(e){}}
-let cfg=loadC(),data=loadD(),usr=loadU(),curView="quest",openCats={};
+function saveU(u){try{localStorage.setItem(UK,JSON.stringify(u));_trackRaw(UK)}catch(e){}}
+
+// ═══ PURE ADAPTIVE COACH ENGINE (Section B) ═══
+const LV_MAP={easy:2,normal:3,hard:4};
+const QUICK_MAP={"1":1,"2":2,"3":3,"4-5":4,"6+":6};
+const BAND_MAP={easy:[3,4],normal:[5,6],hard:[7,8]};
+const SLOT_TIME_MAP={morning:"07:30",lunch:"12:30",afternoon:"15:30",evening:"19:30"};
+function cloneObj(o){return o===undefined||o===null?o:JSON.parse(JSON.stringify(o))}
+function _getPlace(c){
+  if(!c||!Array.isArray(c.places)||!c.places.length)return null;
+  const ap=c.activePlace;
+  if(typeof ap==="number")return c.places[ap]||null;
+  const idx=c.places.findIndex(p=>p&&(p.id===ap||p.name===ap));
+  return c.places[idx>=0?idx:0]||null;
+}
+function _getSpan(place){
+  if(!place)return 0;
+  const top=Number(place.topFloor)||0;
+  const st=(place.startFloor!==undefined&&place.startFloor!==null&&place.startFloor!=="")?Number(place.startFloor):1;
+  return Math.max(0,top-st);
+}
+function _maxN(c){
+  const slots=(c&&Array.isArray(c.slots)&&c.slots.length)?c.slots:[{name:"evening",min:5}];
+  const sum=slots.reduce((a,s)=>a+(Number(s&&s.min)||0),0);
+  return Math.min(6,Math.max(1,Math.floor(sum/2)));
+}
+function hardAllowed(c,cf){
+  if(!c||!c.joints)return false;
+  const medOk=cf?(cf.med==="none"||cf.medAck===true):false;
+  return Boolean(c.joints.knee==="none"&&medOk&&c.level==="hard");
+}
+function initialPlan(c,cf){
+  const co=c||{};
+  const place=_getPlace(co);
+  const span=_getSpan(place);
+  const fit=co.fitness||{};
+  const f=(Number(fit.fTest)>0)?Number(fit.fTest):(QUICK_MAP[fit.quick]||2);
+  const knee=(co.joints&&co.joints.knee)||"none";
+  const elev=(place&&place.elevator)||"yes";
+  let mode="stairs";
+  if(knee==="now"||co.stairsLocked||!place||span<1||(elev==="no"&&knee==="mild")){
+    mode="flat";
+  }
+  let R=0;
+  if(mode==="stairs"){
+    R=Math.max(1,Math.min(span,f));
+    if(knee==="mild")R=Math.min(R,2);
+  }
+  const rawLv=co.level||"easy";
+  const effLv=(rawLv==="hard"&&!hardAllowed(co,cf))?"normal":rawLv;
+  let pace=effLv;
+  if(knee==="mild")pace="easy";
+  let N=LV_MAP[effLv]||2;
+  if(mode==="stairs"&&elev==="no"&&knee==="none"){
+    N=Math.min(N,3);
+  }
+  N=Math.min(N,_maxN(co));
+  const descent=elev==="no"?"slow":"elevator";
+  return{R,N,pace,mode,descent};
+}
+function judge(pace,talk,doneAll,missReason){
+  if(missReason==="hard")return"hard";
+  if(talk===null||talk===undefined)return"ok";
+  const tVal=Number(talk);
+  const band=BAND_MAP[pace]||BAND_MAP.easy;
+  if(tVal>=9||tVal>band[1])return"hard";
+  if(doneAll&&tVal<band[0])return"easy";
+  if(pace==="easy"&&doneAll&&tVal===3)return"easy";
+  return"ok";
+}
+function weekKey(today,checkinDow){
+  if(!today)return null;
+  const cd=(checkinDow===undefined||checkinDow===null)?0:Number(checkinDow);
+  const cur=dow(today);
+  const diff=(cur-cd+7)%7;
+  return addD(today,-diff);
+}
+function canMove(c,delta,today){
+  if(!c||!today)return true;
+  const cd=(c.checkinDow===undefined||c.checkinDow===null)?0:Number(c.checkinDow);
+  const wk=weekKey(today,cd);
+  const log=Array.isArray(c.ladderLog)?c.ladderLog:[];
+  let net=0;
+  for(const it of log){
+    if(it&&it.d&&weekKey(it.d,cd)===wk)net+=Number(it.delta)||0;
+  }
+  return Math.abs(net+Number(delta))<=1;
+}
+function ladderUp(plan,c,cf){
+  if(!plan)return null;
+  const p=cloneObj(plan);
+  const co=c||{};
+  const mx=_maxN(co);
+  if(p.N<6&&p.N<mx){p.N+=1;return p}
+  const place=_getPlace(co);
+  const span=_getSpan(place);
+  const knee=(co.joints&&co.joints.knee)||"none";
+  const rLim=knee==="mild"?Math.min(span,2):span;
+  if(p.mode==="stairs"&&p.R<rLim){p.R+=1;return p}
+  if(p.pace==="easy"&&knee!=="mild"){p.pace="normal";return p}
+  if(p.pace==="normal"&&hardAllowed(co,cf)){p.pace="hard";return p}
+  return null;
+}
+function ladderDown(plan){
+  if(!plan)return null;
+  const p=cloneObj(plan);
+  if(p.pace==="hard"){p.pace="normal";return p}
+  if(p.pace==="normal"){p.pace="easy";return p}
+  if(p.mode==="stairs"&&p.R>1){p.R-=1;return p}
+  if(p.N>1){p.N-=1;return p}
+  return null;
+}
+function _pushLadder(c,today,delta,rule){
+  if(!Array.isArray(c.ladderLog))c.ladderLog=[];
+  c.ladderLog.push({d:today,delta,rule});
+  c.ladderLog=c.ladderLog.filter(x=>x&&x.d&&dBtw(x.d,today)<=60);
+}
+function adherence(c,ss,fromDay,toDay){
+  const co=c||{};
+  const days=Array.isArray(co.days)?co.days:[1,2,3,4,5];
+  const list=Array.isArray(ss)?ss:[];
+  const map={};
+  list.forEach(s=>{if(s&&s.d)map[s.d]=s});
+  const totalD=dBtw(fromDay,toDay);
+  let planned=0,done=0,plannedDays=0,doneDays=0;
+  const defN=(co.plan&&co.plan.N)||2;
+  for(let i=0;i<=totalD;i++){
+    const d=addD(fromDay,i);
+    if(days.includes(dow(d))){
+      plannedDays++;
+      const s=map[d];
+      const pR=(s&&typeof s.plannedRounds==="number")?s.plannedRounds:defN;
+      const dR=(s&&typeof s.doneRounds==="number")?s.doneRounds:0;
+      planned+=pR;
+      done+=dR;
+      if(dR>=1)doneDays++;
+    }
+  }
+  return{planned,done,rate:planned>0?(done/planned):null,plannedDays,doneDays};
+}
+function applySession(state,s,today){
+  const c=cloneObj(state.coach||{});
+  const cf=state.cfg||{};
+  const past=Array.isArray(state.sessions)?state.sessions:[];
+  if(!c.plan)c.plan=initialPlan(c,cf);
+  const pBefore=cloneObj(c.plan);
+  const plannedRounds=(s.plannedRounds!==undefined&&s.plannedRounds!==null)?Number(s.plannedRounds):pBefore.N;
+  const doneRounds=(s.doneRounds!==undefined&&s.doneRounds!==null)?Number(s.doneRounds):(s.missReason||s.bodyStop?0:plannedRounds);
+  const doneAll=plannedRounds>0&&doneRounds>=plannedRounds;
+  const talk=(s.talk===undefined||s.talk===null)?null:Number(s.talk);
+  const pain=(s.pain===undefined||s.pain===null)?0:Number(s.pain);
+  const redFlag=Boolean(s.redFlag);
+  const bodyStop=Boolean(s.bodyStop);
+  const missReason=s.missReason||null;
+  const userPick=s.userPick||null;
+  const secs=Number(s.secs)||0;
+  const slot=s.slot||(c.slots&&c.slots[0]&&c.slots[0].name)||"evening";
+  const place=(s.place!==undefined)?s.place:(c.activePlace||0);
+  const judged=judge(pBefore.pace,talk,doneAll,missReason);
+  const prev=past.length?past[past.length-1]:null;
+  const rules=[],changes=[];
+  let msgKey="p0",s3Restored=false;
+  if(!bodyStop&&!redFlag&&pain===0&&c.s3){
+    c.s3.ok=(Number(c.s3.ok)||0)+1;
+    if(c.s3.ok>=2){
+      c.plan.pace=c.s3.prevPace||c.plan.pace;
+      if(c.plan.mode==="stairs"&&c.s3.prevR)c.plan.R=c.s3.prevR;
+      c.s3=null;
+      s3Restored=true;
+      changes.push("S3r");
+    }
+  }
+  if(bodyStop){
+    c.stairsLocked=true;
+    c.lockReason="body";
+    rules.push("S1");
+    msgKey="s1";
+    changes.push("lock:body");
+  }else if(redFlag||pain===2){
+    c.stairsLocked=true;
+    c.lockReason="knee";
+    c.lockUntil=addD(today,7);
+    c.plan.mode="flat";
+    c.plan.R=0;
+    rules.push("S2");
+    msgKey="s2";
+    changes.push("mode:flat");
+  }else if(pain===1){
+    if(!c.s3)c.s3={prevPace:c.plan.pace,prevR:c.plan.R,ok:0};
+    else c.s3.ok=0;
+    c.plan.pace="easy";
+    if(c.plan.mode==="stairs")c.plan.R=Math.max(1,c.plan.R-1);
+    rules.push("S3");
+    msgKey="s3";
+    changes.push("pace:easy");
+  }else{
+    const recentHardMiss=past.filter(x=>x&&x.missReason==="hard"&&(!x.d||(dBtw(x.d,today)>=0&&dBtw(x.d,today)<=7))).length+(missReason==="hard"?1:0);
+    const isR2=(judged==="hard"&&prev&&prev.judged==="hard")||recentHardMiss>=2;
+    if(isR2){
+      if(canMove(c,-1,today)){
+        const down=ladderDown(c.plan);
+        if(down){
+          c.plan=down;
+          _pushLadder(c,today,-1,"R2");
+          changes.push("ladder:-1");
+        }
+        rules.push("R2");
+        msgKey="r2";
+      }else{
+        rules.push("R2-capped");
+        msgKey="r1";
+      }
+    }else if(judged==="hard"){
+      rules.push("R1");
+      msgKey="r1";
+    }else if(judged==="easy"&&pain===0&&c.reentry&&today<=c.reentry.until){
+      c.plan=cloneObj(c.reentry.prev);
+      c.reentry=null;
+      rules.push("P1-reentry");
+      msgKey="p1";
+      changes.push("reentry:restored");
+    }else{
+      const cd=(c.checkinDow===undefined||c.checkinDow===null)?0:Number(c.checkinDow);
+      const wk=weekKey(today,cd);
+      const hasUp=Array.isArray(c.ladderLog)&&c.ladderLog.some(x=>x&&x.d&&weekKey(x.d,cd)===wk&&Number(x.delta)>0);
+      const prevEasy=Boolean(prev&&prev.judged==="easy"&&(prev.pain===0||prev.pain===undefined||prev.pain===null));
+      if(!s3Restored&&judged==="easy"&&pain===0&&prevEasy&&!hasUp&&!c.maintenance&&canMove(c,1,today)){
+        const up=ladderUp(c.plan,c,cf);
+        if(up){
+          c.plan=up;
+          _pushLadder(c,today,1,"P1");
+          rules.push("P1");
+          msgKey="p1";
+          changes.push("ladder:+1");
+        }else{
+          rules.push("P0");
+          msgKey="p0";
+        }
+      }else{
+        rules.push("P0");
+        msgKey="p0";
+      }
+    }
+  }
+  if(s3Restored)rules.push("S3r");
+  const session={d:today,slot,place,plannedRounds,doneRounds,R:pBefore.R,pace:pBefore.pace,mode:pBefore.mode,talk,pain,redFlag,bodyStop,missReason,userPick,secs,judged};
+  return{coach:c,session,rules,msgKey,changes};
+}
+function unlock(coachIn,kind,today,painZero){
+  const c=cloneObj(coachIn||{});
+  const reason=c.lockReason||kind;
+  if(!c.stairsLocked&&!reason)return{ok:false,coach:c};
+  if(reason==="knee"){
+    if(!today||(c.lockUntil&&today<c.lockUntil)||painZero!==true)return{ok:false,coach:c};
+  }else if(reason!=="body"){
+    return{ok:false,coach:c};
+  }
+  const curN=(c.plan&&c.plan.N)||2;
+  c.stairsLocked=false;
+  c.lockReason=null;
+  c.lockUntil=null;
+  const fresh=initialPlan(c,null);
+  c.plan={R:fresh.R,N:Math.max(1,Math.ceil(curN*0.5)),pace:"easy",mode:fresh.mode,descent:fresh.descent};
+  return{ok:true,coach:c};
+}
+function dailyCheck(state,today){
+  const c=cloneObj(state.coach||{});
+  const cf=state.cfg||{};
+  if(!c.plan)c.plan=initialPlan(c,cf);
+  const ss=Array.isArray(state.sessions)?state.sessions:[];
+  const doneList=ss.filter(x=>x&&x.d&&x.d<=today&&Number(x.doneRounds)>=1).sort((a,b)=>a.d.localeCompare(b.d));
+  const last=doneList.length?doneList[doneList.length-1].d:(c.startDate||cf.startDate||today);
+  const gap=dBtw(last,today);
+  const rules=[];
+  if(gap>=14){
+    c.needRetest=true;
+    if(!c.reentry){
+      c.reentry={until:addD(today,7),prev:cloneObj(c.plan)};
+      c.plan.N=Math.max(1,Math.ceil(c.plan.N/2));
+      c.plan.pace="easy";
+    }
+    rules.push("M4");
+  }else if(gap>=7&&gap<=13&&!c.reentry){
+    c.reentry={until:addD(today,7),prev:cloneObj(c.plan)};
+    c.plan.N=Math.max(1,Math.ceil(c.plan.N/2));
+    c.plan.pace="easy";
+    rules.push("M3");
+  }else{
+    const yest=addD(today,-1);
+    const sDate=c.startDate||cf.startDate;
+    const days=Array.isArray(c.days)?c.days:[1,2,3,4,5];
+    if((!sDate||yest>=sDate)&&days.includes(dow(yest))){
+      const ySess=ss.find(x=>x&&x.d===yest);
+      if(!ySess||!ySess.doneRounds||Number(ySess.doneRounds)<=0){
+        rules.push("M1");
+      }
+    }
+  }
+  const askUnlock=Boolean(c.stairsLocked&&c.lockReason==="knee"&&c.lockUntil&&today>=c.lockUntil);
+  return{coach:c,rules,askUnlock};
+}
+function avgWeight(dObj,fromDay,toDay){
+  if(!dObj||!fromDay||!toDay)return{avg:null,n:0};
+  const len=dBtw(fromDay,toDay);
+  let sum=0,n=0;
+  for(let i=0;i<=len;i++){
+    const d=addD(fromDay,i);
+    const e=dObj[d];
+    if(e&&typeof e.weight==="number"&&e.weight>0){
+      sum+=e.weight;
+      n++;
+    }
+  }
+  return{avg:n>0?(sum/n):null,n};
+}
+function kcalTarget(cfIn,cIn,weight){
+  const cf=cfIn||{};
+  const co=cIn||{};
+  const w=weight||co.lastAvgW||cf.startWeight;
+  const base=calcCaloriePlan(Object.assign({},cf,{startWeight:w||cf.startWeight}));
+  const tdee=Math.round(base.tdee);
+  const adj=Number(co.kcalAdj)||0;
+  const goal=cf.goal||"loss";
+  const isMaint=Boolean(co.maintenance||goal==="maintain");
+  const isLoss=!isMaint&&goal==="loss";
+  const lo=Math.max(base.floor,tdee-500);
+  const hi=tdee+500;
+  const mid=Math.round((base.recMin+base.recMax)/2);
+  let target;
+  if(isMaint)target=tdee+adj;
+  else if(isLoss)target=Math.max(lo,mid+adj);
+  else target=Math.min(hi,mid+adj);
+  return{tdee,target,min:target-100,max:target+100,lo,hi,atFloor:Boolean(isLoss&&(target-100)<lo)};
+}
+function checkinDue(c,today){
+  if(!c||!today||!c.startDate)return false;
+  if(dBtw(c.startDate,today)<7)return false;
+  if(!c.lastCheckin)return true;
+  const cd=(c.checkinDow===undefined||c.checkinDow===null)?0:Number(c.checkinDow);
+  return weekKey(today,cd)!==weekKey(c.lastCheckin,cd);
+}
+function acceptMaintenance(cIn){
+  const c=cloneObj(cIn||{});
+  c.maintenance=true;
+  c.goalReached=false;
+  c.kcalAdj=0;
+  return c;
+}
+function _bestSlot(state){
+  if(state.suggestSlot)return state.suggestSlot;
+  const ln=state.learn;
+  if(ln&&ln.slots&&typeof ln.slots==="object"){
+    let best=null,bestR=-1;
+    for(const[k,v]of Object.entries(ln.slots)){
+      if(v&&typeof v==="object"&&(v.offered>0||v.done>0)){
+        const r=(Number(v.done)+1)/(Number(v.offered)+2);
+        if(r>bestR){bestR=r;best=k}
+      }
+    }
+    if(best)return best;
+  }
+  return null;
+}
+function weeklyCheckin(state,today){
+  const c=cloneObj(state.coach||{});
+  const cf=cloneObj(state.cfg||{});
+  const dObj=state.data||{};
+  const ss=Array.isArray(state.sessions)?state.sessions:[];
+  if(!c.plan)c.plan=initialPlan(c,cf);
+  const from=addD(today,-7),to=addD(today,-1);
+  const a=adherence(c,ss,from,to);
+  const wNow=avgWeight(dObj,from,to);
+  const w14=avgWeight(dObj,addD(today,-21),addD(today,-15));
+  const wPrev=avgWeight(dObj,addD(today,-14),addD(today,-8));
+  const rules=[],changes=[];
+  const goal=cf.goal||"loss";
+  const isMaint=Boolean(c.maintenance||goal==="maintain");
+  const isLoss=!isMaint&&goal==="loss";
+  const isGain=!isMaint&&goal==="gain";
+  if(a.rate!==null&&a.rate<0.5){
+    if(canMove(c,-1,today)){
+      c.plan.N=Math.max(1,c.plan.N-1);
+      _pushLadder(c,today,-1,"M2");
+      changes.push("N:"+c.plan.N);
+    }
+    c.suggestSlot=_bestSlot(state);
+    c.firstButton="oneRound";
+    rules.push("M2");
+  }
+  const lossDiff=(w14.n>0&&wNow.n>0)?Math.round((w14.avg-wNow.avg)*1e6)/1e6:null;
+  const gainDiff=(w14.n>0&&wNow.n>0)?Math.round((wNow.avg-w14.avg)*1e6)/1e6:null;
+  const stall=isLoss?(lossDiff!==null&&lossDiff<0.2):isGain?(gainDiff!==null&&gainDiff<0.2):false;
+  if(wNow.n<4){
+    rules.push("W-skip");
+  }else{
+    if(stall&&a.rate!==null&&a.rate<0.7){
+      if(a.rate>=0.5){
+        if(canMove(c,-1,today)){
+          c.plan.N=Math.max(1,c.plan.N-1);
+          _pushLadder(c,today,-1,"W1");
+          changes.push("N:"+c.plan.N);
+        }
+        c.suggestSlot=_bestSlot(state);
+        c.firstButton="oneRound";
+      }
+      rules.push("W1");
+    }
+    c.lastAvgW=wNow.avg;
+    rules.push("W2");
+    const twoWkOk=!c.lastKcalChange||dBtw(c.lastKcalChange,today)>=14;
+    if(isLoss&&!c.maintenance&&a.rate!==null&&a.rate>=0.7&&stall&&twoWkOk){
+      const kt=kcalTarget(cf,c,c.lastAvgW);
+      if(kt.target-100>=kt.lo){
+        c.kcalAdj=(Number(c.kcalAdj)||0)-100;
+        c.lastKcalChange=today;
+        changes.push("kcal:-100");
+      }else if(canMove(c,1,today)){
+        const up=ladderUp(c.plan,c,cf);
+        if(up){
+          c.plan=up;
+          _pushLadder(c,today,1,"W3");
+          changes.push("ladder:+1");
+        }
+      }
+      rules.push("W3");
+    }
+    if(isLoss){
+      const prevDiff=(wPrev.n>0&&wNow.n>0)?Math.round((wPrev.avg-wNow.avg)*1e6)/1e6:0;
+      c.w4Count=prevDiff>1.0?((Number(c.w4Count)||0)+1):0;
+      if(c.w4Count>=2){
+        const kt=kcalTarget(cf,c,c.lastAvgW);
+        if(kt.target+100<=kt.tdee)c.kcalAdj=(Number(c.kcalAdj)||0)+100;
+        c.lastKcalChange=today;
+        rules.push("W4");
+        changes.push("kcal:+100");
+      }
+    }
+    if(isGain&&a.rate!==null&&a.rate>=0.7&&stall&&twoWkOk){
+      const kt=kcalTarget(cf,c,c.lastAvgW);
+      if(kt.target+100<=kt.tdee+500)c.kcalAdj=(Number(c.kcalAdj)||0)+100;
+      c.lastKcalChange=today;
+      rules.push("W5");
+      changes.push("kcal:+100");
+    }
+    if(!c.maintenance&&cf.targetWeight&&((goal==="loss"&&wNow.avg<=cf.targetWeight)||(goal==="gain"&&wNow.avg>=cf.targetWeight))){
+      c.goalReached=true;
+      rules.push("G1");
+      changes.push("goalReached:true");
+    }
+    if(c.maintenance||goal==="maintain"){
+      const gDiff=cf.targetWeight?Math.round(Math.abs(wNow.avg-cf.targetWeight)*1e6)/1e6:0;
+      c.g2Out=gDiff>1.0?((Number(c.g2Out)||0)+1):0;
+      if(c.g2Out>=2){
+        c.kcalAdj=(Number(c.kcalAdj)||0)+(wNow.avg>cf.targetWeight?-100:100);
+        c.g2Out=0;
+        rules.push("G2");
+        changes.push("G2:kcal");
+      }
+    }
+  }
+  c.lastCheckin=today;
+  const z=lang==="zh";
+  const pctStr=a.rate!==null?Math.round(a.rate*100)+"%":"0%";
+  const l1=z?`上周计划 ${a.planned}轮中完成 ${a.done}轮(${pctStr})`:`지난주 계획 ${a.planned}라운드 중 ${a.done}라운드(${pctStr})`;
+  let l2="";
+  if(wNow.n<4){
+    l2=z?"每周记录4次体重后将启用基于体重的调整":"체중을 4번 기록하면 체중 기반 조정을 해요";
+  }else{
+    let dTxt="";
+    if(w14.n>0&&w14.avg!==null){
+      const df=wNow.avg-w14.avg,sg=df>0?"+":"";
+      dTxt=z?`(较两周前 ${sg}${df.toFixed(1)}kg)`:`(2주 전보다 ${sg}${df.toFixed(1)}kg)`;
+    }
+    l2=z?`7日平均体重 ${wNow.avg.toFixed(1)}kg${dTxt}`:`7일 평균 체중 ${wNow.avg.toFixed(1)}kg${dTxt}`;
+  }
+  const pTxt=c.plan.mode==="stairs"
+    ?(z?`爬楼 ${c.plan.R}层 × ${c.plan.N}轮`:`계단 ${c.plan.R}층 × ${c.plan.N}라운드`)
+    :(z?`平地步行 3分钟 × ${c.plan.N}轮`:`평지 걷기 3분 × ${c.plan.N}라운드`);
+  let l3="";
+  if(rules.includes("W1")){
+    l3=z?`本周：${pTxt} · 先保证坚持(꾸준함 먼저) / 热量维持`:`이번 주: ${pTxt} · 꾸준함 먼저 / 칼로리 유지`;
+  }else if(rules.includes("W3")){
+    l3=z?`本周：${pTxt} / 建议热量下调 100kcal`:`이번 주: ${pTxt} / 권장 칼로리 100kcal 낮춤`;
+  }else if(rules.includes("W4")){
+    l3=z?`本周：${pTxt} / 减重过快提醒 (+100kcal)`:`이번 주: ${pTxt} / 감량 속도 경고 (+100kcal)`;
+  }else if(rules.includes("W5")){
+    l3=z?`本周：${pTxt} / 增重热量 +100kcal`:`이번 주: ${pTxt} / 증량 칼로리 +100kcal`;
+  }else if(rules.includes("G1")){
+    l3=z?`本周：${pTxt} / 达成目标！建议切换维持模式`:`이번 주: ${pTxt} / 목표 달성! 유지 모드 제안`;
+  }else{
+    l3=z?`本周：${pTxt} 保持不变 / 热量维持`:`이번 주: ${pTxt} 그대로 / 칼로리 유지`;
+  }
+  const note={wk:today,lines:[l1,l2,l3],rules:rules.slice(),changes:changes.slice()};
+  return{coach:c,cfg:cf,note,rules,changes};
+}
+
+// ═══ COACH STORAGE (Section A) ═══
+function defaultCoach(cIn){
+  const cf=cIn||cfg||{};
+  const pains=Array.isArray(cf.pains)?cf.pains:[];
+  const hasKA=pains.includes("knee")||pains.includes("ankle");
+  const base={
+    v:1,
+    startDate:cf.startDate||td(),
+    places:[],
+    activePlace:0,
+    joints:{
+      knee:hasKA?"mild":"none",
+      back:pains.includes("back"),
+      ankle:pains.includes("ankle"),
+      wrist:pains.includes("wrist")
+    },
+    fitness:{quick:null,fTest:null,testDate:null},
+    slots:[{name:"evening",min:5}],
+    days:[1,2,3,4,5],
+    equip:[],
+    level:"easy",
+    plan:null,
+    stairsLocked:false,
+    lockReason:null,
+    lockUntil:null,
+    ladderLog:[],
+    lastKcalChange:null,
+    kcalAdj:0,
+    maintenance:false,
+    goalReached:false,
+    checkinDow:0,
+    lastCheckin:null,
+    s3:null,
+    reentry:null,
+    needRetest:false,
+    suggestSlot:null,
+    g2Out:0,
+    w4Count:0,
+    lastAvgW:null
+  };
+  base.plan=initialPlan(base,cf);
+  return base;
+}
+function defaultLearn(){return{slots:{},moves:{},picks:[]}}
+function loadCoach(cfIn){
+  const cf=cfIn||cfg;
+  if(!cf)return null;
+  try{
+    const raw=localStorage.getItem(COK);
+    if(!raw)return defaultCoach(cf);
+    const parsed=JSON.parse(raw);
+    if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))return defaultCoach(cf);
+    const def=defaultCoach(cf);
+    const merged=Object.assign({},def,parsed,{
+      joints:Object.assign({},def.joints,parsed.joints||{}),
+      fitness:Object.assign({},def.fitness,parsed.fitness||{})
+    });
+    if(!merged.plan)merged.plan=initialPlan(merged,cf);
+    return merged;
+  }catch(e){return defaultCoach(cf)}
+}
+function saveCoach(c){try{localStorage.setItem(COK,JSON.stringify(c));_trackRaw(COK)}catch(e){}}
+function loadSessions(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SEK)||"[]");
+    return Array.isArray(s)?s:[];
+  }catch(e){return[]}
+}
+function saveSessions(arr,refDate){
+  try{
+    const list=Array.isArray(arr)?arr:[];
+    const ref=refDate||(list.length?list[list.length-1].d:td())||td();
+    const map={};
+    list.forEach(s=>{if(s&&s.d&&dBtw(s.d,ref)<=180)map[s.d]=s});
+    const clean=Object.values(map).sort((a,b)=>a.d.localeCompare(b.d));
+    sessions=clean;
+    localStorage.setItem(SEK,JSON.stringify(clean));
+    _trackRaw(SEK);
+  }catch(e){}
+}
+function loadLearn(){
+  try{
+    const l=JSON.parse(localStorage.getItem(LEK)||"null");
+    if(!l||typeof l!=="object"||Array.isArray(l))return defaultLearn();
+    return{
+      slots:(l.slots&&typeof l.slots==="object"&&!Array.isArray(l.slots))?l.slots:{},
+      moves:(l.moves&&typeof l.moves==="object"&&!Array.isArray(l.moves))?l.moves:{},
+      picks:Array.isArray(l.picks)?l.picks:[]
+    };
+  }catch(e){return defaultLearn()}
+}
+function saveLearn(l,refDate){
+  try{
+    const obj=l&&typeof l==="object"?l:defaultLearn();
+    const ref=refDate||td();
+    if(Array.isArray(obj.picks)){
+      obj.picks=obj.picks.filter(p=>p&&p.d&&dBtw(p.d,ref)<=28);
+    }else obj.picks=[];
+    learn=obj;
+    localStorage.setItem(LEK,JSON.stringify(obj));
+    _trackRaw(LEK);
+  }catch(e){}
+}
+function loadNotes(){
+  try{
+    const n=JSON.parse(localStorage.getItem(NOK)||"[]");
+    return Array.isArray(n)?n.slice(-12):[];
+  }catch(e){return[]}
+}
+function saveNotes(arr){
+  try{
+    const clean=Array.isArray(arr)?arr.slice(-12):[];
+    notes=clean;
+    localStorage.setItem(NOK,JSON.stringify(clean));
+    _trackRaw(NOK);
+  }catch(e){}
+}
+let cfg=loadC(),data=loadD(),usr=loadU(),coach=cfg?loadCoach(cfg):null,sessions=loadSessions(),learn=loadLearn(),notes=loadNotes(),curView="quest",openCats={};
+if(cfg&&coach&&!localStorage.getItem(COK))saveCoach(coach);
+[CK,DK,UK,COK,SEK,LEK,NOK].forEach(_trackRaw);
+function syncFromStorage(){
+  try{
+    if(localStorage.getItem(CK)!==_lastRaw[CK]){cfg=loadC();_trackRaw(CK)}
+    if(localStorage.getItem(DK)!==_lastRaw[DK]){data=loadD();_trackRaw(DK)}
+    if(localStorage.getItem(UK)!==_lastRaw[UK]){usr=loadU();_trackRaw(UK)}
+    if(localStorage.getItem(COK)!==_lastRaw[COK]){coach=cfg?loadCoach(cfg):null;_trackRaw(COK)}
+    if(localStorage.getItem(SEK)!==_lastRaw[SEK]){sessions=loadSessions();_trackRaw(SEK)}
+    if(localStorage.getItem(LEK)!==_lastRaw[LEK]){learn=loadLearn();_trackRaw(LEK)}
+    if(localStorage.getItem(NOK)!==_lastRaw[NOK]){notes=loadNotes();_trackRaw(NOK)}
+  }catch(e){}
+}
 function toast(m){const el=document.getElementById("toast");if(!el)return;el.textContent=m;el.classList.remove("hide");setTimeout(()=>el.classList.add("hide"),1800)}
 
 // ═══ STEP 3: Mifflin-St Jeor BMR / TDEE & Speed Guard ═══
@@ -422,43 +1069,69 @@ function canStart(plan){
 // ═══ STEP 5: Dynamic Quests by Mode, Preset, Muscle & Pain Substitution ═══
 const QT=14;
 function exSets(){
-  if(!cfg)return 7;
-  const w=Math.floor(Math.max(0,dBtw(cfg.startDate,td()))/7)+1;
-  let base=w<=1?7:w<=2?8:w<=4?10:12;
-  if(cfg.muscle)base+=2;
-  return base;
+  if(!cfg)return 2;
+  return cfg.muscle?3:2;
+}
+function _paceLabel(pace,z){
+  if(pace==="hard")return z?"高强":"어려움";
+  if(pace==="normal")return z?"普通":"보통";
+  return z?"轻松":"쉬움";
+}
+function _descentLabel(descent,z){
+  return descent==="slow"
+    ?(z?"扶好扶手慢慢下楼":"손잡이 잡고 천천히 내려오기")
+    :(z?"坐电梯下楼":"엘리베이터로 내려오기");
+}
+function _resolveExTime(){
+  const co=coach||(cfg?defaultCoach(cfg):null);
+  const s0=(co&&Array.isArray(co.slots)&&co.slots[0])?co.slots[0]:{name:"evening",min:5};
+  const nm=s0.name||"evening";
+  if(SLOT_TIME_MAP[nm])return SLOT_TIME_MAP[nm];
+  if(/^\d{2}:\d{2}$/.test(nm))return nm;
+  if(s0.time&&/^\d{2}:\d{2}$/.test(s0.time))return s0.time;
+  return"19:30";
 }
 function buildExQuestText(sets){
+  const z=lang==="zh";
   const pains=(cfg&&Array.isArray(cfg.pains))?cfg.pains:[];
-  const hasKnee=pains.includes("knee")||pains.includes("ankle");
-  const hasWrist=pains.includes("wrist");
-  const hasBack=pains.includes("back");
-  const musTag=(cfg&&cfg.muscle)?(lang==="zh"?" [增肌强化]":" [근력 강화]"):"";
-  let title=lang==="zh"?"楼梯与力量运动":"계단·근력 운동";
-  if(hasKnee&&hasWrist){
-    title=lang==="zh"?"温和步行与核心运动":"관절 보호 걷기·코어 운동";
-  }else if(hasKnee){
-    title=lang==="zh"?"平地步行运动 (护膝)":"평지·제자리 걷기 (무릎 보호)";
+  const co=coach||(cfg?defaultCoach(cfg):null);
+  const pl=(co&&co.plan)?co.plan:(co?initialPlan(co,cfg):{R:0,N:2,pace:"easy",mode:"flat",descent:"elevator"});
+  const j=(co&&co.joints)||{};
+  const hasKnee=pains.includes("knee")||pains.includes("ankle")||j.knee==="mild"||j.knee==="now"||j.ankle;
+  const hasWrist=pains.includes("wrist")||Boolean(j.wrist);
+  const hasBack=pains.includes("back")||Boolean(j.back);
+  const isFlat=pl.mode!=="stairs"||Boolean(co&&co.stairsLocked);
+  const musTag=(cfg&&cfg.muscle)?(z?" [增肌强化]":" [근력 강화]"):"";
+  let title=z?"楼梯与力量运动":"계단·근력 운동";
+  if(isFlat){
+    if(hasKnee&&hasWrist)title=z?"温和步行与核心运动":"관절 보호 걷기·코어 운동";
+    else if(hasKnee)title=z?"平地步行运动 (护膝)":"평지·제자리 걷기 (무릎 보호)";
+    else if(hasWrist)title=z?"平地快走与背部夹紧运动 (护腕)":"빠르게 걷기·등 조이기 운동 (손목 보호)";
+    else title=z?"平地快走与力量运动":"빠르게 걷기·근력 운동";
   }else if(hasWrist){
-    title=lang==="zh"?"楼梯与背部夹紧运动 (护腕)":"계단·등 조이기 운동 (손목 보호)";
+    title=z?"楼梯与背部夹紧运动 (护腕)":"계단·등 조이기 운동 (손목 보호)";
   }
-  const part1=hasKnee
-    ?(lang==="zh"?`平地/原地踏步10分钟×${sets}组`:`평지·제자리 걷기 10분×${sets}세트`)
-    :(lang==="zh"?`爬楼梯5层×${sets}组`:`계단 5층×${sets}세트`);
+  const pLbl=_paceLabel(pl.pace,z);
+  const dLbl=_descentLabel(pl.descent,z);
+  const part1=isFlat
+    ?(z?`平地快走·原地踏步 3分钟 × ${pl.N}轮`:`빠르게 걷기·제자리 걷기 3분 × ${pl.N}라운드`)
+    :(z?`爬楼梯 ${pl.R}层 × ${pl.N}轮 · ${pLbl} (${dLbl})`:`계단 ${pl.R}층 × ${pl.N}라운드 · ${pLbl} (${dLbl})`);
   const part2=hasWrist
-    ?(lang==="zh"?`站立夹背与核心收紧15次×${sets}组`:`서서 등 조이기·코어 버티기 15회×${sets}세트`)
+    ?(z?`站立夹背与核心收紧15次×${sets}组`:`서서 등 조이기·코어 버티기 15회×${sets}세트`)
     :hasBack
-      ?(lang==="zh"?`靠墙静蹲/轻俯卧撑12次×${sets}组`:`벽 짚고 버티기 12회×${sets}세트`)
-      :(lang==="zh"?`墙壁俯卧撑15次×${sets}组`:`벽 푸시업 15회×${sets}세트`);
+      ?(z?`靠墙静蹲/轻俯卧撑12次×${sets}组`:`벽 짚고 버티기 12회×${sets}세트`)
+      :(z?`墙壁俯卧撑15次×${sets}组`:`벽 푸시업 15회×${sets}세트`);
   return{title:title+musTag,desc:`${part1} + ${part2}`};
 }
 function getQuests(){
+  syncFromStorage();
   const s=exSets();
   const fr=lang==="zh"?["橙子","苹果","香蕉"]:["오렌지","사과","바나나"];
   const fi=cfg?Math.abs(dBtw(cfg.startDate,td()))%3:0;
   const goal=(cfg&&cfg.goal)||"loss";
   const preset=(cfg&&cfg.preset)||"legacy";
   const exInfo=buildExQuestText(s);
+  const exTime=_resolveExTime();
   let bfDesc=t("egg")+" + "+fr[fi];
   let lnEmoji="🥒",lnTitle=t("lunch"),lnDesc=t("lunch_d");
   let dnDesc=t("dinner_d");
@@ -479,7 +1152,6 @@ function getQuests(){
     dnDesc=lang==="zh"?"从下方分类选择均衡晚餐":"아래 메뉴 중 적정량 균형 저녁";
     q14={id:"fs",time:"22:30",emoji:"🌿",title:lang==="zh"?"规律作息确认":"규칙적 식습관 확인",desc:lang==="zh"?"避免深夜暴饮暴食，保持良好睡眠":"심야 과식만 피하고 편안하게 휴식"};
   }else{
-    // loss mode: legacy vs flex
     if(preset==="flex"){
       bfDesc=lang==="zh"?`蛋白质早餐（鸡蛋/豆浆 + ${fr[fi]}）`:`단백질 아침 (계란·두유 + ${fr[fi]})`;
       lnEmoji="🥗";
@@ -491,7 +1163,7 @@ function getQuests(){
   return[
     {id:"w1",time:"07:00",emoji:"💧",title:t("water"),desc:t("water_d")},
     {id:"wt",time:"07:00",emoji:"⚖️",title:t("weigh"),desc:t("weigh_d")},
-    {id:"ex",time:"07:10",emoji:"🏃",title:exInfo.title,desc:exInfo.desc},
+    {id:"ex",time:exTime,emoji:"🏃",title:exInfo.title,desc:exInfo.desc},
     {id:"w2",time:"07:30",emoji:"💧",title:t("water"),desc:lang==="zh"?"早餐前30分钟 + 运动后补水":"아침 30분 전 + 운동 후 보충"},
     {id:"bf",time:"08:00",emoji:"🍳",title:t("breakfast"),desc:bfDesc},
     {id:"w3",time:"09:30",emoji:"💧",title:t("water"),desc:t("water_d")},
@@ -552,11 +1224,16 @@ function drMT(ctx){ctx.clearRect(0,0,350,450);ctx.fillStyle="rgba(6,6,14,.95)";c
 function mtTap(x,y){const g=gameData;if(g.lk)return;const i=Math.floor((x-11)/82)+Math.floor((y-20)/82)*4;if(i<0||i>=12)return;const c=g.cards[i];if(!c||c.f||c.m)return;c.f=true;const ctx=document.getElementById("gc").getContext("2d");drMT(ctx);if(g.f===null)g.f=i;else{g.s=i;g.lk=true;setTimeout(()=>{if(g.cards[g.f].e===g.cards[g.s].e){g.cards[g.f].m=true;g.cards[g.s].m=true;gameScore+=20;g.p++;if(g.p===6){gameActive=false;clearInterval(gameLoop);if(!data[td()])data[td()]={};data[td()].gamePlayed=true;saveD(data);document.getElementById("overlay").innerHTML=`<div style="text-align:center"><div style="font-size:48px;filter:drop-shadow(0 0 20px rgba(0,255,242,.5))">🎉</div><div style="font-size:18px;font-weight:800;color:var(--cy);margin-top:10px">${lang==="zh"?"配对成功！":"매칭 성공!"}</div><div style="font-size:14px;color:var(--ny);margin-top:6px">${t("score")}: ${gameScore}</div><button class="game-btn" style="margin-top:16px" onclick="closeOv()">${lang==="zh"?"关闭":"닫기"}</button></div>`;return}}else{g.cards[g.f].f=false;g.cards[g.s].f=false;loseLife()}g.f=null;g.s=null;g.lk=false;drMT(ctx);updHud()},600)}}
 // ═══ STEP 2: JSON BACKUP ═══
 function getExportObject(){
+  syncFromStorage();
   return{
     b60lang:lang,
     burn60_config:cfg,
     burn60_data:data,
-    burn60_user:usr
+    burn60_user:usr,
+    burn60_coach:coach,
+    burn60_sessions:sessions,
+    burn60_learn:learn,
+    burn60_notes:notes
   };
 }
 function exportBackup(){
@@ -586,6 +1263,18 @@ function validateBackupObj(obj){
   }
   if(!obj.burn60_data||typeof obj.burn60_data!=="object"||Array.isArray(obj.burn60_data))return false;
   if(!obj.burn60_user||typeof obj.burn60_user!=="object"||Array.isArray(obj.burn60_user)||typeof obj.burn60_user.xp!=="number")return false;
+  if("burn60_coach" in obj&&obj.burn60_coach!==undefined&&obj.burn60_coach!==null){
+    if(typeof obj.burn60_coach!=="object"||Array.isArray(obj.burn60_coach))return false;
+  }
+  if("burn60_sessions" in obj&&obj.burn60_sessions!==undefined){
+    if(!Array.isArray(obj.burn60_sessions))return false;
+  }
+  if("burn60_learn" in obj&&obj.burn60_learn!==undefined){
+    if(!obj.burn60_learn||typeof obj.burn60_learn!=="object"||Array.isArray(obj.burn60_learn))return false;
+  }
+  if("burn60_notes" in obj&&obj.burn60_notes!==undefined){
+    if(!Array.isArray(obj.burn60_notes))return false;
+  }
   return true;
 }
 function applyBackupObject(rawInput,skipConfirm){
@@ -604,16 +1293,31 @@ function applyBackupObject(rawInput,skipConfirm){
   lang=obj.b60lang;
   try{localStorage.setItem("b60lang",lang)}catch(e){}
   if(obj.burn60_config){
-    cfg=Object.assign({},obj.burn60_config,{schemaVersion:2});
+    cfg=Object.assign({},obj.burn60_config,{schemaVersion:3});
     saveC(cfg);
+    if(obj.burn60_coach&&typeof obj.burn60_coach==="object"){
+      const def=defaultCoach(cfg);
+      coach=Object.assign({},def,cloneObj(obj.burn60_coach),{
+        joints:Object.assign({},def.joints,obj.burn60_coach.joints||{}),
+        fitness:Object.assign({},def.fitness,obj.burn60_coach.fitness||{})
+      });
+      if(!coach.plan)coach.plan=initialPlan(coach,cfg);
+    }else{
+      coach=defaultCoach(cfg);
+    }
+    saveCoach(coach);
   }else{
     cfg=null;
-    try{localStorage.removeItem(CK)}catch(e){}
+    coach=null;
+    try{localStorage.removeItem(CK);localStorage.removeItem(COK)}catch(e){}
   }
   data=obj.burn60_data;
   saveD(data);
   usr=obj.burn60_user;
   saveU(usr);
+  saveSessions(Array.isArray(obj.burn60_sessions)?cloneObj(obj.burn60_sessions):[]);
+  saveLearn((obj.burn60_learn&&typeof obj.burn60_learn==="object")?Object.assign(defaultLearn(),cloneObj(obj.burn60_learn)):defaultLearn());
+  saveNotes(Array.isArray(obj.burn60_notes)?cloneObj(obj.burn60_notes):[]);
   syncDocLang();
   render();
   toast(lang==="zh"?"备份导入成功 ✓":"백업 가져오기 완료 ✓");
@@ -656,7 +1360,19 @@ function defaultOb(){
     allergy:"none",
     allergyMemo:"",
     exTime:"10",
-    exPlace:"shop",
+    exPlace:"",
+    obPlaceName:"",
+    obFloors:"",
+    obStartFloor:"",
+    obTopFloor:"",
+    obElev:"yes",
+    obHandrail:true,
+    obKnee:null,
+    obQuick:null,
+    obSlot:"evening",
+    obMin:5,
+    obLevel:"easy",
+    hardWarn:false,
     preset:"flex",
     presetTouched:false,
     sleep:"normal",
@@ -668,6 +1384,11 @@ function defaultOb(){
 }
 let ob=defaultOb();
 function fmtIn(v){return(v===undefined||v===null||v===""||Number.isNaN(v))?"":String(v)}
+function _effObKnee(){
+  if(ob.obKnee)return ob.obKnee;
+  const p=Array.isArray(ob.pains)?ob.pains:[];
+  return(p.includes("knee")||p.includes("ankle"))?"mild":"none";
+}
 function syncObInputs(){
   const dEl=document.getElementById("s-d");
   if(dEl){
@@ -705,6 +1426,10 @@ function syncObInputs(){
   }
   const alEl=document.getElementById("s-allergy-memo");if(alEl)ob.allergyMemo=alEl.value;
   const moEl=document.getElementById("s-motive");if(moEl)ob.motive=moEl.value;
+  const flEl=document.getElementById("s-ob-floors");if(flEl)ob.obFloors=flEl.value.trim();
+  const sfEl=document.getElementById("s-ob-start-floor");if(sfEl)ob.obStartFloor=sfEl.value.trim();
+  const tfEl=document.getElementById("s-ob-top-floor");if(tfEl)ob.obTopFloor=tfEl.value.trim();
+  const hrEl=document.getElementById("s-ob-handrail");if(hrEl)ob.obHandrail=Boolean(hrEl.checked);
 }
 function setObGoal(g){
   syncObInputs();
@@ -715,6 +1440,20 @@ function setObGoal(g){
 function setObDays(d){
   syncObInputs();
   ob.days=d;
+  render();
+}
+function setObLevel(lv){
+  syncObInputs();
+  const knee=_effObKnee();
+  const medOk=!ob.med||ob.med==="none"||ob.medAck===true;
+  if(lv==="hard"&&(knee!=="none"||!medOk)){
+    ob.obLevel="normal";
+    ob.hardWarn=true;
+    toast(lang==="zh"?"因膝盖或慢病安全条件，已自动设为普通强度":"무릎·질환 안전 조건으로 '보통' 강도로 설정됩니다");
+  }else{
+    ob.obLevel=lv;
+    ob.hardWarn=false;
+  }
   render();
 }
 function setObField(k,v){
@@ -729,6 +1468,10 @@ function setObField(k,v){
   }
   if(k==="med"&&v==="none"){
     ob.medAck=false;
+  }
+  if(k==="obKnee"&&v!=="none"&&ob.obLevel==="hard"){
+    ob.obLevel="normal";
+    ob.hardWarn=true;
   }
   render();
 }
@@ -899,6 +1642,7 @@ function renderOnboarding(){
         ${!isStop?`<button type="button" class="sbtn" style="margin-top:0;flex:2" data-testid="btn-next" onclick="obNext()">${z?"下一步 →":"다음 →"}</button>`:""}
       </div>`;
   }else if(obStep===4){
+    const effKnee=_effObKnee();
     stepHtml=`
       <div class="gc" data-testid="q-lifestyle">
         <div class="ob-step"><span>STEP 4 / 5 · ${z?"工作、饮食与运动环境":"생활·식사·운동 환경"}</span></div>
@@ -921,18 +1665,47 @@ function renderOnboarding(){
           <button type="button" class="ob-opt ${ob.allergy==="yes"?"on":""}" data-testid="opt-allergy-yes" onclick="setObField('allergy','yes')">${z?"有 (备注)":"있음 + 메모"}</button>
         </div>
         ${ob.allergy==="yes"?`<div class="sf"><label class="sl" for="s-allergy-memo">${z?"忌口备注":"알러지·기피 음식 메모"}</label><input class="si" style="font-size:13px" type="text" id="s-allergy-memo" data-testid="input-allergy" value="${ob.allergyMemo}" placeholder="${z?"例如：海鲜、乳糖":"예: 갑각류, 우유"}"></div>`:""}
-        <div class="ob-q" data-testid="q-extime">13. ${z?"每天可运动时间":"하루 운동 가능 시간"}</div>
+        <div class="ob-q" data-testid="q-explace">13. ${z?"运动环境：可使用楼梯的场所（留空则为平地模式）":"운동 환경: 계단 장소 (비워 두면 평지 모드)"}</div>
         <div class="ob-opts">
-          <button type="button" class="ob-opt ${ob.exTime==="10"?"on":""}" data-testid="opt-extime-10" onclick="setObField('exTime','10')">⏱️ ${z?"5~10分钟碎片":"5~10분 쪼개기"}</button>
-          <button type="button" class="ob-opt ${ob.exTime==="20"?"on":""}" data-testid="opt-extime-20" onclick="setObField('exTime','20')">⏱️ ${z?"15~20分钟":"15~20분"}</button>
-          <button type="button" class="ob-opt ${ob.exTime==="30"?"on":""}" data-testid="opt-extime-30" onclick="setObField('exTime','30')">⏱️ ${z?"30分钟以上":"30분 이상"}</button>
+          <button type="button" class="ob-opt ${ob.obPlaceName==="home"?"on":""}" data-testid="ob-place-home" onclick="setObField('obPlaceName',ob.obPlaceName==='home'?'':'home')">🏠 ${z?"家里":"집"}</button>
+          <button type="button" class="ob-opt ${ob.obPlaceName==="work"?"on":""}" data-testid="ob-place-work" onclick="setObField('obPlaceName',ob.obPlaceName==='work'?'':'work')">🏢 ${z?"职场":"직장"}</button>
+          <button type="button" class="ob-opt ${ob.obPlaceName==="other"?"on":""}" data-testid="ob-place-other" onclick="setObField('obPlaceName',ob.obPlaceName==='other'?'':'other')">📍 ${z?"其他":"기타"}</button>
         </div>
-        <div class="ob-q" data-testid="q-explace">14. ${z?"运动场所与器材":"운동 장소·기구"}</div>
+        <div class="sr">
+          <div class="sf"><label class="sl" for="s-ob-floors">${z?"总层数":"전체 층수"}</label><input class="si" type="number" min="1" max="100" id="s-ob-floors" data-testid="ob-floors" value="${fmtIn(ob.obFloors)}" oninput="syncObInputs()" onchange="syncObInputs()"></div>
+          <div class="sf"><label class="sl" for="s-ob-start-floor">${z?"起始层":"시작 층"}</label><input class="si" type="number" min="1" max="100" id="s-ob-start-floor" data-testid="ob-start-floor" value="${fmtIn(ob.obStartFloor)}" oninput="syncObInputs()" onchange="syncObInputs()"></div>
+          <div class="sf"><label class="sl" for="s-ob-top-floor">${z?"最高可达层":"맨 위 층"}</label><input class="si" type="number" min="1" max="100" id="s-ob-top-floor" data-testid="ob-top-floor" value="${fmtIn(ob.obTopFloor)}" oninput="syncObInputs()" onchange="syncObInputs()"></div>
+        </div>
         <div class="ob-opts">
-          <button type="button" class="ob-opt ${ob.exPlace==="shop"?"on":""}" data-testid="opt-explace-shop" onclick="setObField('exPlace','shop')">🏢 ${z?"门店空隙(墙/楼梯)":"매장 틈새(벽·계단)"}</button>
-          <button type="button" class="ob-opt ${ob.exPlace==="home"?"on":""}" data-testid="opt-explace-home" onclick="setObField('exPlace','home')">🏠 ${z?"家里":"집"}</button>
-          <button type="button" class="ob-opt ${ob.exPlace==="out"?"on":""}" data-testid="opt-explace-out" onclick="setObField('exPlace','out')">🌳 ${z?"户外":"야외"}</button>
+          <button type="button" class="ob-opt ${ob.obElev==="yes"?"on":""}" data-testid="ob-elev-yes" onclick="setObField('obElev','yes')">🛗 ${z?"有电梯":"엘리베이터 있음"}</button>
+          <button type="button" class="ob-opt ${ob.obElev==="some"?"on":""}" data-testid="ob-elev-some" onclick="setObField('obElev','some')">🕐 ${z?"有时可用":"가끔"}</button>
+          <button type="button" class="ob-opt ${ob.obElev==="no"?"on":""}" data-testid="ob-elev-no" onclick="setObField('obElev','no')">🚶 ${z?"无电梯":"없음"}</button>
         </div>
+        <div style="margin-bottom:10px;font-size:12px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="s-ob-handrail" data-testid="ob-handrail" ${ob.obHandrail?"checked":""} onchange="setObField('obHandrail',this.checked)"><span>${z?"楼梯有扶手":"계단에 손잡이 있음"}</span></label></div>
+        <div class="ob-q">${z?"膝盖状态":"무릎 상태"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${effKnee==="none"?"on":""}" data-testid="ob-knee-none" onclick="setObField('obKnee','none')">${z?"无不适":"없음"}</button>
+          <button type="button" class="ob-opt ${effKnee==="mild"?"on":""}" data-testid="ob-knee-mild" onclick="setObField('obKnee','mild')">${z?"偶尔不适":"가끔 불편"}</button>
+          <button type="button" class="ob-opt ${effKnee==="now"?"on":""}" data-testid="ob-knee-now" onclick="setObField('obKnee','now')">${z?"现在疼痛":"지금 아픔"}</button>
+        </div>
+        <div class="ob-q">${z?"平时爬几层楼会开始喘气？":"숨차기 전 몇 층?"}</div>
+        <div class="ob-opts">
+          ${[["1","1"],["2","2"],["3","3"],["4-5","4~5"],["6+","6+"]].map(([k,l])=>`<button type="button" class="ob-opt ${ob.obQuick===k?"on":""}" data-testid="ob-quick-${k}" onclick="setObField('obQuick','${k}')">${l}${z?"层":"층"}</button>`).join("")}
+        </div>
+        <div class="ob-q" data-testid="q-extime">14. ${z?"可运动时段与时长":"운동 시간대 및 시간"}</div>
+        <div class="ob-opts">
+          ${[["morning",z?"早上":"아침"],["lunch",z?"中午":"점심"],["afternoon",z?"下午":"오후"],["evening",z?"晚上":"저녁"]].map(([k,l])=>`<button type="button" class="ob-opt ${ob.obSlot===k?"on":""}" data-testid="ob-slot-${k}" onclick="setObField('obSlot','${k}')">${l}</button>`).join("")}
+        </div>
+        <div class="ob-opts">
+          ${[2,5,10].map(m=>`<button type="button" class="ob-opt ${Number(ob.obMin)===m?"on":""}" data-testid="ob-min-${m}" onclick="setObField('obMin',${m})">${m}${z?"分钟":"분"}</button>`).join("")}
+        </div>
+        <div class="ob-q">${z?"初始强度":"시작 강도"}</div>
+        <div class="ob-opts">
+          <button type="button" class="ob-opt ${ob.obLevel==="easy"?"on":""}" data-testid="ob-level-easy" onclick="setObLevel('easy')">${z?"轻松 (推荐)":"쉬움 (추천)"}</button>
+          <button type="button" class="ob-opt ${ob.obLevel==="normal"?"on":""}" data-testid="ob-level-normal" onclick="setObLevel('normal')">${z?"普通":"보통"}</button>
+          <button type="button" class="ob-opt ${ob.obLevel==="hard"?"on":""}" data-testid="ob-level-hard" onclick="setObLevel('hard')">${z?"高强":"어려움"}</button>
+        </div>
+        ${ob.hardWarn?`<div class="ob-warn">${z?"⚠️ 有膝盖不适或慢病未确认时，高强度将作为普通强度保存。":"⚠️ 무릎 불편감이 있거나 질환 확인이 없으면 '어려움'은 '보통' 강도로 저장됩니다."}</div>`:""}
       </div>
       <div class="ob-nav">
         <button type="button" class="ob-btn2" data-testid="btn-prev" onclick="obPrev()">← ${z?"上一步":"이전"}</button>
@@ -987,20 +1760,538 @@ function renderOnboarding(){
   </div>`;
 }
 
+// ═══ COACH UI & SETTINGS (Sections C, D, E) ═══
+let checkSheetOpen=false,s1Open=false,settingsOpen=false,retestOpen=false,retestVal="",lastCoachMsg="";
+let checkForm={talk:null,pain:0,redFlag:false,missReason:null,userPick:null};
+let setDraft=null,setPlaceIdx=0,setSlotIdx=0;
+
+function _coachMsgText(key,c){
+  const z=lang==="zh";
+  const pl=(c&&c.plan)||{R:0,N:2,pace:"easy",mode:"flat"};
+  if(key==="s1")return z?"请立刻停下坐着休息。如果胸痛或头晕没有缓解，请拨打 120。":"지금 멈추고 앉아서 쉬세요. 가슴 통증이나 어지러움이 안 가라앉으면 119에 연락하세요.";
+  if(key==="s2")return z?"如果膝盖肿胀、卡住或无法承重，请暂停爬楼，改为平地快走，并建议就医。":"무릎이 붓거나 걸리거나 체중을 못 실으면 계단은 쉬어요. 평지 걷기로 바꾸고, 진료를 권해요.";
+  if(key==="s3")return z?`膝盖有点不舒服，下次只爬${pl.R}层，慢慢来。`:`무릎이 조금 불편했군요. 다음엔 ${pl.R}층만, 천천히 가요.`;
+  if(key==="r2")return z?`连续两次都很吃力，我们降一格（${_paceLabel(pl.pace,true)} · ${pl.N}轮）。减量也是计划的一部分。`:`두 번 연속 많이 힘들었죠. 한 칸 내려서(${_paceLabel(pl.pace,false)} · ${pl.N}라운드) 갈게요. 줄이는 것도 계획이에요.`;
+  if(key==="r1")return z?"今天有点吃力，下次保持当前计划，只放慢速度。":"오늘은 힘들었네요. 다음엔 계획은 유지하고 속도만 낮춰요.";
+  if(key==="p1")return z?`很轻松！下次起每天调整为 ${pl.N}轮（${pl.mode==="stairs"?pl.R+"层":"平地"}），只加一格。`:`여유 있었어요! 내일부터 하루 ${pl.N}라운드(${pl.mode==="stairs"?pl.R+"층":"평지"})로 한 칸만 올려요.`;
+  return z?"强度刚刚好！下次继续保持当前计划。":"적당한 강도였어요! 다음에도 지금 계획 그대로 가요.";
+}
+function _todaySession(today2){
+  return sessions.find(x=>x&&x.d===today2)||null;
+}
+function _markExQuestDone(today2){
+  if(!data[today2])data[today2]={};
+  if(!data[today2].quests)data[today2].quests={};
+  if(!data[today2].quests.ex){
+    data[today2].quests.ex=true;
+    saveD(data);
+    usr.xp=calcXP();
+    saveU(usr);
+  }
+}
+function doRoundDone(){
+  syncFromStorage();
+  const today2=td();
+  if(!coach)coach=loadCoach(cfg);
+  const pl=coach.plan||initialPlan(coach,cfg);
+  let s=_todaySession(today2);
+  if(!s){
+    s={d:today2,slot:(coach.slots&&coach.slots[0]&&coach.slots[0].name)||"evening",place:coach.activePlace||0,plannedRounds:pl.N,doneRounds:0,R:pl.R,pace:pl.pace,mode:pl.mode,talk:null,pain:0,redFlag:false,bodyStop:false,missReason:null,userPick:null,secs:0,judged:null};
+    sessions.push(s);
+  }
+  s.plannedRounds=pl.N;
+  s.doneRounds=Math.min(pl.N,(Number(s.doneRounds)||0)+1);
+  saveSessions(sessions,today2);
+  render();
+}
+function doOneRound(){
+  doRoundDone();
+}
+function doBodyStop(){
+  syncFromStorage();
+  const today2=td();
+  if(!coach)coach=loadCoach(cfg);
+  const pl=coach.plan||initialPlan(coach,cfg);
+  const cur=_todaySession(today2);
+  const doneR=cur?Number(cur.doneRounds)||0:0;
+  const past=sessions.filter(x=>x&&x.d!==today2);
+  const res=applySession({coach,cfg,sessions:past},{plannedRounds:pl.N,doneRounds:doneR,talk:null,pain:0,redFlag:false,bodyStop:true,missReason:null,userPick:null},today2);
+  coach=res.coach;
+  coach.lastMsgKey=res.msgKey;
+  coach.lastMsgDate=today2;
+  saveCoach(coach);
+  past.push(res.session);
+  saveSessions(past,today2);
+  lastCoachMsg=_coachMsgText(res.msgKey,coach);
+  s1Open=true;
+  checkSheetOpen=false;
+  render();
+}
+function openCheckSheet(){
+  syncFromStorage();
+  const today2=td();
+  const cur=_todaySession(today2);
+  checkForm={
+    talk:cur&&cur.talk!==null?cur.talk:null,
+    pain:cur&&typeof cur.pain==="number"?cur.pain:0,
+    redFlag:Boolean(cur&&cur.redFlag),
+    missReason:(cur&&cur.missReason)||null,
+    userPick:(cur&&cur.userPick)||null
+  };
+  checkSheetOpen=true;
+  render();
+}
+function setCheckField(k,v){
+  checkForm[k]=v;
+  render();
+}
+function saveCheckSheet(){
+  syncFromStorage();
+  const today2=td();
+  if(!coach)coach=loadCoach(cfg);
+  const pl=coach.plan||initialPlan(coach,cfg);
+  const cur=_todaySession(today2);
+  const doneR=cur?Number(cur.doneRounds)||0:0;
+  const past=sessions.filter(x=>x&&x.d!==today2);
+  const res=applySession({coach,cfg,sessions:past},{
+    plannedRounds:pl.N,
+    doneRounds:doneR,
+    talk:checkForm.talk,
+    pain:checkForm.pain,
+    redFlag:checkForm.redFlag,
+    bodyStop:false,
+    missReason:checkForm.missReason,
+    userPick:checkForm.userPick
+  },today2);
+  coach=res.coach;
+  coach.lastMsgKey=res.msgKey;
+  coach.lastMsgRules=res.rules;
+  coach.lastMsgDate=today2;
+  saveCoach(coach);
+  past.push(res.session);
+  saveSessions(past,today2);
+  const slName=res.session.slot||"evening";
+  const mdName=res.session.mode||"flat";
+  if(!learn.slots)learn.slots={};
+  if(!learn.slots[slName])learn.slots[slName]={offered:0,done:0};
+  learn.slots[slName].offered+=Number(res.session.plannedRounds)||0;
+  learn.slots[slName].done+=Number(res.session.doneRounds)||0;
+  if(!learn.moves)learn.moves={};
+  if(!learn.moves[mdName])learn.moves[mdName]={offered:0,done:0};
+  learn.moves[mdName].offered+=Number(res.session.plannedRounds)||0;
+  learn.moves[mdName].done+=Number(res.session.doneRounds)||0;
+  if(!Array.isArray(learn.picks))learn.picks=[];
+  if(res.session.userPick)learn.picks.push({d:today2,pick:res.session.userPick});
+  saveLearn(learn,today2);
+  if(res.session.doneRounds>=1)_markExQuestDone(today2);
+  lastCoachMsg=_coachMsgText(res.msgKey,coach);
+  checkSheetOpen=false;
+  toast(lastCoachMsg);
+  render();
+}
+function doUnlockBody(){
+  syncFromStorage();
+  const res=unlock(coach,"body",td(),true);
+  if(res.ok){
+    coach=res.coach;
+    s1Open=false;
+    saveCoach(coach);
+    render();
+  }
+}
+function doUnlockKnee(){
+  syncFromStorage();
+  const res=unlock(coach,"knee",td(),true);
+  if(res.ok){
+    coach=res.coach;
+    saveCoach(coach);
+    render();
+  }
+}
+function onRetestInput(el,applyNow){
+  retestVal=el.value.trim();
+  const v=parseInt(retestVal,10);
+  if(applyNow&&retestOpen&&v>0){
+    syncFromStorage();
+    coach.fitness.fTest=v;
+    coach.fitness.testDate=td();
+    coach.needRetest=false;
+    coach.reentry=null;
+    coach.plan=initialPlan(coach,cfg);
+    saveCoach(coach);
+    render();
+  }
+}
+function doRetest(){
+  syncFromStorage();
+  const inp=document.getElementById("retest-input");
+  if(inp&&inp.value.trim()!=="")retestVal=inp.value.trim();
+  const v=parseInt(retestVal,10);
+  if(v>0){
+    coach.fitness.fTest=v;
+    coach.fitness.testDate=td();
+    coach.needRetest=false;
+    coach.reentry=null;
+    coach.plan=initialPlan(coach,cfg);
+    retestOpen=false;
+    retestVal="";
+    saveCoach(coach);
+    render();
+  }else if(!retestOpen){
+    retestOpen=true;
+    render();
+  }else{
+    coach.fitness.fTest=3;
+    coach.fitness.testDate=td();
+    coach.needRetest=false;
+    coach.reentry=null;
+    coach.plan=initialPlan(coach,cfg);
+    retestOpen=false;
+    saveCoach(coach);
+    render();
+  }
+}
+function doAcceptMaint(){
+  syncFromStorage();
+  coach=acceptMaintenance(coach);
+  saveCoach(coach);
+  toast(lang==="zh"?"已切换到维持模式 ✓":"유지 모드로 전환되었습니다 ✓");
+  render();
+}
+function ackWeeklyNote(){
+  syncFromStorage();
+  if(coach){
+    coach.unreadNote=null;
+    saveCoach(coach);
+  }
+  render();
+}
+function openCoachSettings(){
+  syncFromStorage();
+  if(!coach)coach=loadCoach(cfg);
+  setDraft=cloneObj(coach);
+  if(!Array.isArray(setDraft.places)||!setDraft.places.length){
+    setDraft.places=[{name:"home",floorsTotal:0,startFloor:1,topFloor:0,elevator:"yes",handrail:true}];
+  }
+  if(!Array.isArray(setDraft.slots)||!setDraft.slots.length){
+    setDraft.slots=[{name:"evening",min:5}];
+  }
+  setPlaceIdx=0;
+  setSlotIdx=0;
+  settingsOpen=true;
+  render();
+}
+function syncSetInputs(){
+  if(!setDraft)return;
+  const p=setDraft.places[setPlaceIdx];
+  if(p){
+    const nmEl=document.getElementById("set-in-pname");if(nmEl)p.name=nmEl.value.trim()||p.name;
+    const flEl=document.getElementById("set-in-floors");if(flEl)p.floorsTotal=parseInt(flEl.value,10)||0;
+    const sfEl=document.getElementById("set-in-start");if(sfEl)p.startFloor=parseInt(sfEl.value,10)||1;
+    const tfEl=document.getElementById("set-in-top");if(tfEl)p.topFloor=parseInt(tfEl.value,10)||0;
+    const hrEl=document.getElementById("set-in-hr");if(hrEl)p.handrail=Boolean(hrEl.checked);
+  }
+  const s=setDraft.slots[setSlotIdx];
+  if(s){
+    const tmEl=document.getElementById("set-in-time");
+    if(tmEl&&tmEl.value.trim())s.name=tmEl.value.trim();
+  }
+  const cdEl=document.getElementById("set-in-cdow");
+  if(cdEl)setDraft.checkinDow=parseInt(cdEl.value,10)||0;
+}
+function setPlaceField(k,v){
+  syncSetInputs();
+  if(!setDraft.places[setPlaceIdx])setDraft.places[setPlaceIdx]={name:"home",floorsTotal:0,startFloor:1,topFloor:0,elevator:"yes",handrail:true};
+  setDraft.places[setPlaceIdx][k]=v;
+  render();
+}
+function addSetPlace(){
+  syncSetInputs();
+  if(setDraft.places.length<3){
+    setDraft.places.push({name:"work",floorsTotal:0,startFloor:1,topFloor:0,elevator:"yes",handrail:true});
+    setPlaceIdx=setDraft.places.length-1;
+  }
+  render();
+}
+function setSlotField(k,v){
+  syncSetInputs();
+  if(!setDraft.slots[setSlotIdx])setDraft.slots[setSlotIdx]={name:"evening",min:5};
+  setDraft.slots[setSlotIdx][k]=v;
+  render();
+}
+function addSetSlot(){
+  syncSetInputs();
+  if(setDraft.slots.length<3){
+    setDraft.slots.push({name:"morning",min:5});
+    setSlotIdx=setDraft.slots.length-1;
+  }
+  render();
+}
+function toggleSetDay(d){
+  syncSetInputs();
+  let arr=Array.isArray(setDraft.days)?setDraft.days.slice():[1,2,3,4,5];
+  if(arr.includes(d))arr=arr.filter(x=>x!==d);
+  else arr.push(d);
+  setDraft.days=arr.sort((a,b)=>a-b);
+  render();
+}
+function setDraftKnee(v){
+  syncSetInputs();
+  setDraft.joints.knee=v;
+  if(v!=="none"&&setDraft.level==="hard")setDraft.level="normal";
+  render();
+}
+function setDraftLevel(v){
+  syncSetInputs();
+  setDraft.level=v;
+  if(v==="hard"&&!hardAllowed(setDraft,cfg)){
+    setDraft.level="normal";
+    toast(lang==="zh"?"安全条件未满足，已设为普通强度":"안전 조건 미충족으로 '보통' 강도로 설정됩니다");
+  }
+  render();
+}
+function saveCoachSettings(){
+  syncSetInputs();
+  const validPlaces=setDraft.places.filter(p=>p&&(Number(p.topFloor)>0||Number(p.floorsTotal)>0));
+  validPlaces.forEach(p=>{if(!p.topFloor&&p.floorsTotal)p.topFloor=p.floorsTotal});
+  setDraft.places=validPlaces;
+  setDraft.activePlace=0;
+  if(setDraft.level==="hard"&&!hardAllowed(setDraft,cfg))setDraft.level="normal";
+  setDraft.plan=initialPlan(setDraft,cfg);
+  coach=setDraft;
+  saveCoach(coach);
+  settingsOpen=false;
+  toast(lang==="zh"?"教练设置已保存 ✓":"코치 설정이 저장되었습니다 ✓");
+  render();
+}
+
+function renderCoachSettings(){
+  if(!settingsOpen||!setDraft)return"";
+  const z=lang==="zh";
+  const p=setDraft.places[setPlaceIdx]||{name:"home",floorsTotal:0,startFloor:1,topFloor:0,elevator:"yes",handrail:true};
+  const s=setDraft.slots[setSlotIdx]||{name:"evening",min:5};
+  const dNames=z?["日","一","二","三","四","五","六"]:["일","월","화","수","목","금","토"];
+  return`<div class="cc-sheet" data-testid="set-panel">
+    <div class="cc-hdr"><span class="cc-ttl">⚙️ ${z?"自适应教练设置":"적응형 코치 설정"}</span><button type="button" class="lang-btn" data-testid="set-cancel" onclick="settingsOpen=false;render()">✕</button></div>
+    <div class="cc-sttl">${z?"运动场所 (最多3处)":"운동 장소 (최대 3곳)"}</div>
+    <div class="ob-opts">
+      ${setDraft.places.map((pl,idx)=>`<button type="button" class="ob-opt ${setPlaceIdx===idx?"on":""}" data-testid="set-place-tab-${idx}" onclick="syncSetInputs();setPlaceIdx=${idx};render()">#${idx+1} ${pl.name||""}</button>`).join("")}
+      ${setDraft.places.length<3?`<button type="button" class="ob-opt" data-testid="set-place-add" onclick="addSetPlace()">+ ${z?"添加":"추가"}</button>`:""}
+    </div>
+    <div class="ob-opts">
+      <button type="button" class="ob-opt ${p.name==="home"?"on":""}" data-testid="set-place-home" onclick="setPlaceField('name','home')">🏠 ${z?"家里":"집"}</button>
+      <button type="button" class="ob-opt ${p.name==="work"?"on":""}" data-testid="set-place-work" onclick="setPlaceField('name','work')">🏢 ${z?"职场":"직장"}</button>
+      <button type="button" class="ob-opt ${p.name==="other"?"on":""}" data-testid="set-place-other" onclick="setPlaceField('name','other')">📍 ${z?"其他":"기타"}</button>
+    </div>
+    <div class="sf" style="margin-bottom:8px"><input class="si" style="font-size:12px;padding:8px" type="text" id="set-in-pname" data-testid="set-place-name" value="${fmtIn(p.name)}" placeholder="${z?"场所名称":"장소 이름"}"></div>
+    <div class="sr">
+      <div class="sf"><label class="sl" for="set-in-floors">${z?"总层数":"전체 층수"}</label><input class="si" type="number" id="set-in-floors" data-testid="set-floors" value="${fmtIn(p.floorsTotal||"")}"></div>
+      <div class="sf"><label class="sl" for="set-in-start">${z?"起始层":"시작 층"}</label><input class="si" type="number" id="set-in-start" data-testid="set-start-floor" value="${fmtIn(p.startFloor??1)}"></div>
+      <div class="sf"><label class="sl" for="set-in-top">${z?"最高层":"맨 위 층"}</label><input class="si" type="number" id="set-in-top" data-testid="set-top-floor" value="${fmtIn(p.topFloor||"")}"></div>
+    </div>
+    <div class="ob-opts">
+      <button type="button" class="ob-opt ${p.elevator==="yes"?"on":""}" data-testid="set-elev-yes" onclick="setPlaceField('elevator','yes')">${z?"有电梯":"엘리베이터 있음"}</button>
+      <button type="button" class="ob-opt ${p.elevator==="some"?"on":""}" data-testid="set-elev-some" onclick="setPlaceField('elevator','some')">${z?"有时":"가끔"}</button>
+      <button type="button" class="ob-opt ${p.elevator==="no"?"on":""}" data-testid="set-elev-no" onclick="setPlaceField('elevator','no')">${z?"无电梯":"없음"}</button>
+    </div>
+    <div style="font-size:11px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="set-in-hr" data-testid="set-handrail" ${p.handrail?"checked":""}><span>${z?"有扶手":"손잡이 있음"}</span></label></div>
+    <div class="cc-sttl">${z?"膝盖状态":"무릎 상태"}</div>
+    <div class="ob-opts">
+      <button type="button" class="ob-opt ${setDraft.joints.knee==="none"?"on":""}" data-testid="set-knee-none" onclick="setDraftKnee('none')">${z?"无不适":"없음"}</button>
+      <button type="button" class="ob-opt ${setDraft.joints.knee==="mild"?"on":""}" data-testid="set-knee-mild" onclick="setDraftKnee('mild')">${z?"偶尔不适":"가끔 불편"}</button>
+      <button type="button" class="ob-opt ${setDraft.joints.knee==="now"?"on":""}" data-testid="set-knee-now" onclick="setDraftKnee('now')">${z?"现在疼痛":"지금 아픔"}</button>
+    </div>
+    <div class="cc-sttl">${z?"运动时段 (最多3个)":"시간대 (최대 3개)"}</div>
+    <div class="ob-opts">
+      ${setDraft.slots.map((sl,idx)=>`<button type="button" class="ob-opt ${setSlotIdx===idx?"on":""}" data-testid="set-slot-tab-${idx}" onclick="syncSetInputs();setSlotIdx=${idx};render()">#${idx+1} ${sl.name}</button>`).join("")}
+      ${setDraft.slots.length<3?`<button type="button" class="ob-opt" data-testid="set-slot-add" onclick="addSetSlot()">+ ${z?"添加":"추가"}</button>`:""}
+    </div>
+    <div class="ob-opts">
+      ${[["morning",z?"早上":"아침"],["lunch",z?"中午":"점심"],["afternoon",z?"下午":"오후"],["evening",z?"晚上":"저녁"]].map(([k,l])=>`<button type="button" class="ob-opt ${s.name===k?"on":""}" data-testid="set-slot-${k}" onclick="setSlotField('name','${k}')">${l}</button>`).join("")}
+    </div>
+    <div class="sf" style="margin-bottom:8px"><input class="si" style="font-size:12px;padding:8px" type="text" id="set-in-time" data-testid="set-slot-time" value="${SLOT_TIME_MAP[s.name]?"":fmtIn(s.name)}" placeholder="HH:MM (예: 18:30)"></div>
+    <div class="ob-opts">
+      ${[2,5,10].map(m=>`<button type="button" class="ob-opt ${Number(s.min)===m?"on":""}" data-testid="set-min-${m}" onclick="setSlotField('min',${m})">${m}${z?"分钟":"분"}</button>`).join("")}
+    </div>
+    <div class="cc-sttl">${z?"运动日":"운동 요일"}</div>
+    <div class="ob-opts">
+      ${dNames.map((dn,di)=>`<button type="button" class="ob-opt" style="min-width:36px;flex:1;padding:8px 2px;${setDraft.days.includes(di)?"border-color:var(--cy);color:var(--cy);background:rgba(0,255,242,.14)":""}" data-testid="set-day-${di}" onclick="toggleSetDay(${di})">${dn}</button>`).join("")}
+    </div>
+    <div class="cc-sttl">${z?"运动强度":"운동 강도"}</div>
+    <div class="ob-opts">
+      <button type="button" class="ob-opt ${setDraft.level==="easy"?"on":""}" data-testid="set-level-easy" onclick="setDraftLevel('easy')">${z?"轻松":"쉬움"}</button>
+      <button type="button" class="ob-opt ${setDraft.level==="normal"?"on":""}" data-testid="set-level-normal" onclick="setDraftLevel('normal')">${z?"普通":"보통"}</button>
+      <button type="button" class="ob-opt ${setDraft.level==="hard"?"on":""}" data-testid="set-level-hard" onclick="setDraftLevel('hard')">${z?"高强":"어려움"}</button>
+    </div>
+    <div class="cc-sttl">${z?"每周复盘日":"주간 체크인 요일"}</div>
+    <select id="set-in-cdow" class="si" style="font-size:13px;padding:8px;margin-bottom:10px" data-testid="set-checkin-dow" onchange="syncSetInputs()">
+      ${dNames.map((dn,di)=>`<option value="${di}" ${Number(setDraft.checkinDow)===di?"selected":""}>${dn}</option>`).join("")}
+    </select>
+    <button type="button" class="sbtn" style="margin-top:4px;padding:12px;font-size:14px" data-testid="set-save" onclick="saveCoachSettings()">${z?"保存设置":"설정 저장"}</button>
+  </div>`;
+}
+
+function renderCoachSection(today2){
+  if(!coach)coach=loadCoach(cfg);
+  const z=lang==="zh";
+  const pl=coach.plan||initialPlan(coach,cfg);
+  const tSess=_todaySession(today2);
+  const curDone=tSess?Number(tSess.doneRounds)||0:0;
+  const isWorkDay=Array.isArray(coach.days)&&coach.days.includes(dow(today2));
+  const dailyRules=Array.isArray(coach.dailyRules)?coach.dailyRules:[];
+  const canAskKnee=Boolean(coach.stairsLocked&&coach.lockReason==="knee"&&(!coach.lockUntil||today2>=coach.lockUntil));
+  let h="";
+
+  if(coach.unreadNote){
+    const nt=coach.unreadNote;
+    h+=`<div class="note-card" data-testid="weekly-note">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <b style="color:var(--ny)">📋 ${z?"本周教练笔记":"주간 코치 노트"} (${nt.wk})</b>
+        <span style="font-size:9px;color:#889">[${(nt.rules||[]).join(", ")}]</span>
+      </div>
+      ${(nt.lines||[]).map(ln=>`<div>· ${ln}</div>`).join("")}
+      <button type="button" class="cc-btn pri" style="margin-top:8px;width:100%" onclick="ackWeeklyNote()">${z?"确认":"확인"}</button>
+    </div>`;
+  }
+
+  if(coach.goalReached&&!coach.maintenance){
+    h+=`<div class="note-card">
+      <div style="font-weight:700;color:var(--cy);margin-bottom:6px">${z?"达成目标！🎉 要切换到维持模式吗？饮食量略增，运动保持现状。":"목표 달성! 🎉 이제 유지 모드로 바꿀까요? 먹는 양은 조금 늘고, 운동은 지금 그대로예요."}</div>
+      <button type="button" class="cc-btn pri" style="width:100%" data-testid="btn-maintenance" onclick="doAcceptMaint()">${z?"切换到维持模式":"유지 모드로 바꾸기"}</button>
+    </div>`;
+  }
+
+  if(s1Open){
+    h+=`<div class="cc-sheet" data-testid="s1-screen" style="border-color:var(--np)">
+      <div class="cc-ttl" style="color:var(--np);margin-bottom:6px">🛑 ${z?"请立刻停止并坐下休息":"즉시 멈추고 앉아서 쉬세요"}</div>
+      <div class="cc-desc">${z?"如果胸痛、头晕或呼吸困难没有缓解，请立即拨打 120。为安全起见，爬楼已锁定。":"가슴 통증이나 어지러움이 안 가라앉으면 즉시 119에 연락하세요. 안전을 위해 계단 라운드가 잠겼습니다."}</div>
+      <button type="button" class="cc-btn" style="width:100%" onclick="s1Open=false;render()">${z?"我知道了":"확인"}</button>
+    </div>`;
+  }
+
+  const pLbl=_paceLabel(pl.pace,z);
+  const dLbl=_descentLabel(pl.descent,z);
+  const planIntro=(pl.mode==="stairs"&&!coach.stairsLocked)
+    ?(z?`今天计划：爬 ${pl.R}层楼 × ${pl.N}轮 · ${pLbl}（${dLbl}）`:`오늘 계획: 계단 ${pl.R}층 × ${pl.N}라운드 · ${pLbl} (${dLbl})`)
+    :(z?`今天计划：平地快走·原地踏步 3分钟 × ${pl.N}轮`:`오늘 계획: 빠르게 걷기·제자리 걷기 3분 × ${pl.N}라운드`);
+
+  const msgToShow=(tSess&&tSess.judged)?_coachMsgText(coach.lastMsgKey||"p0",coach):(coach.lastMsgDate===today2&&lastCoachMsg?lastCoachMsg:"");
+
+  h+=`<div class="cc-card" data-testid="coach-card">
+    <div class="cc-hdr">
+      <span class="cc-ttl">🏃 ${z?"今日自适应教练":"오늘의 적응형 코치"}</span>
+      ${isWorkDay?`<span class="cc-prog">${z?`轮次 ${curDone}/${pl.N}`:`라운드 ${curDone}/${pl.N}`}</span>`:""}
+    </div>
+    ${dailyRules.includes("M1")?`<div class="cc-msg" data-testid="coach-m1">${z?"昨天休息了。没关系，偶尔漏一次不会破坏习惯。今天从1轮开始。":"어제는 쉬었네요. 괜찮아요, 한 번 쉰다고 습관이 무너지진 않아요. 오늘 1라운드부터 해요."}</div>`:""}
+    ${(coach.reentry&&today2<=coach.reentry.until)?`<div class="cc-msg">${z?"欢迎回来！这周先从一半的量、轻松强度开始。":"다시 와서 반가워요! 이번 주는 절반만, 쉽게 시작해요."}</div>`:""}
+    ${(coach.needRetest||retestOpen)?`<div class="cc-msg">
+      <div style="margin-bottom:6px">${z?"超过14天未记录，建议重新自测能不喘气爬几层：":"14일 이상 공백이 있었어요. 숨차기 전 몇 층까지 가능한지 다시 테스트해 볼까요?"}</div>
+      <div style="display:flex;gap:6px">
+        <input type="number" min="1" max="30" id="retest-input" class="si" style="padding:6px;font-size:13px;flex:1" value="${fmtIn(retestVal)}" placeholder="${z?"层数":"층수"}" oninput="onRetestInput(this,false)" onchange="onRetestInput(this,true)">
+        <button type="button" class="cc-btn pri" data-testid="btn-retest" onclick="doRetest()">${z?"重新自测":"자가 테스트 다시 하기"}</button>
+      </div>
+    </div>`:""}
+    ${coach.stairsLocked?`<div class="cc-msg" style="border-color:var(--np);color:#ffd0e0">
+      <div>🔒 ${coach.lockReason==="body"?(z?"因身体停止信号，爬楼已暂停并改为平地代替方案。":"몸 이상 신호로 계단이 잠겨 평지 대안으로 진행합니다."):(z?`因膝盖保护，爬楼已暂停（至${coach.lockUntil||""}改为平地步行）。`:`무릎 보호를 위해 계단이 잠겨 평지 대안으로 전환되었습니다(${coach.lockUntil||""}까지).`)}</div>
+      ${coach.lockReason==="body"?`<button type="button" class="cc-btn pri" style="margin-top:6px;width:100%" data-testid="btn-unlock-body" onclick="doUnlockBody()">${z?"已经恢复，重新开始":"괜찮아졌어요, 다시 시작"}</button>`:""}
+      ${canAskKnee?`<div style="margin-top:6px"><div style="margin-bottom:4px">${z?"膝盖疼痛为0了吗？":"무릎 통증 0인가요?"}</div><button type="button" class="cc-btn pri" style="width:100%" data-testid="btn-unlock-knee" onclick="doUnlockKnee()">${z?"是的，膝盖无痛（解锁）":"무릎 통증 0인가요? (잠금 해제)"}</button></div>`:""}
+    </div>`:""}
+    ${!isWorkDay
+      ?`<div class="cc-desc" style="color:var(--nv);font-weight:700">${z?"今天是休息日":"오늘은 쉬는 날"}</div>`
+      :`<div class="cc-desc">${planIntro}${coach.suggestSlot?`<div style="font-size:10px;color:var(--cy);margin-top:2px">💡 ${z?"推荐完成率高时段":"추천 시간대"}: ${coach.suggestSlot}</div>`:""}</div>
+        <div class="cc-btns">
+          ${coach.firstButton==="oneRound"?`<button type="button" class="cc-btn pri" data-testid="btn-one-round" onclick="doOneRound()">${z?"先做1轮":"1라운드만"}</button>`:""}
+          <button type="button" class="cc-btn pri" data-testid="btn-round-done" onclick="doRoundDone()">${z?"完成1轮 (+1)":"라운드 1개 완료"}</button>
+          <button type="button" class="cc-btn" data-testid="btn-check" onclick="openCheckSheet()">${z?"结束并打卡":"끝내고 체크"}</button>
+          <button type="button" class="cc-btn warn" data-testid="btn-stop" onclick="doBodyStop()">${z?"身体不适：停止信号":"몸이 이상해요: 멈춤 신호"}</button>
+        </div>`}
+    ${msgToShow?`<div class="cc-msg" style="margin-top:8px;margin-bottom:0" data-testid="coach-msg">💬 ${msgToShow}</div>`:""}
+    <details class="cc-stop" data-testid="stop-signs">
+      <summary>⚠️ ${z?"运动停止信号与膝盖危险信号 (MedlinePlus, NHS)":"멈춤 신호 및 무릎 위험 신호 안내 (MedlinePlus, NHS)"}</summary>
+      <div style="margin-top:6px">
+        <div><b>${z?"全身停止信号":"몸 멈춤 신호"}:</b> ${z?"头晕、胸痛、心跳不规律、呼吸极度困难、恶心 → 立即停止并休息（不缓解请拨打 120）":"어지러움, 가슴 통증, 불규칙한 심장 박동, 숨이 너무 참, 메스꺼움 → 즉시 멈춤 (한국 119 / 중국 120)"}</div>
+        <div style="margin-top:4px"><b>${z?"膝盖危险信号":"무릎 위험 신호"}:</b> ${z?"剧烈疼痛、无法活动或无法承重、明显肿胀或变形、卡住/打软腿/疼痛弹响、发热且膝盖红热 → 暂停爬楼并就医":"심하게 아픔, 움직이거나 체중을 못 실음, 많이 붓거나 모양이 변함, 잠기거나 꺾이거나 아픈 딸깍, 열+무릎이 붉고 뜨거움"}</div>
+        <div style="margin-top:4px;color:#778">${z?"来源：MedlinePlus, NHS":"출처: MedlinePlus, NHS"}</div>
+      </div>
+    </details>
+  </div>`;
+
+  if(checkSheetOpen){
+    const doneTxt=curDone>=pl.N?(z?"全部完成":"다 함"):curDone>0?(z?`完成部分 (${curDone}/${pl.N})`:`일부 (${curDone}/${pl.N})`):(z?"未完成 (0轮)":"못 함 (0라운드)");
+    h+=`<div class="cc-sheet" data-testid="check-sheet">
+      <div class="cc-hdr"><span class="cc-ttl">✅ ${z?"10秒运动反馈 (3步)":"세션 후 3탭 체크"}</span><button type="button" class="lang-btn" onclick="checkSheetOpen=false;render()">✕</button></div>
+      <div class="cc-sttl">1. ${z?"刚才运动时呼吸怎么样？":"말하기 (숨찬 정도)"}</div>
+      <div class="ob-opts">
+        <button type="button" class="ob-opt ${checkForm.talk===3?"on":""}" data-testid="talk-3" onclick="setCheckField('talk',3)">${z?"还能哼歌":"노래 가능"}</button>
+        <button type="button" class="ob-opt ${checkForm.talk===5.5?"on":""}" data-testid="talk-5.5" onclick="setCheckField('talk',5.5)">${z?"能说话":"말은 됨"}</button>
+        <button type="button" class="ob-opt ${checkForm.talk===7.5?"on":""}" data-testid="talk-7.5" onclick="setCheckField('talk',7.5)">${z?"只能说几个字":"몇 마디만"}</button>
+        <button type="button" class="ob-opt ${checkForm.talk===9?"on":""}" data-testid="talk-9" onclick="setCheckField('talk',9)">${z?"说不出话":"말 못 함"}</button>
+      </div>
+      <div class="cc-sttl">2. ${z?"膝盖与关节感觉":"무릎·관절"}</div>
+      <div class="ob-opts">
+        <button type="button" class="ob-opt ${checkForm.pain===0?"on":""}" data-testid="pain-0" onclick="setCheckField('pain',0)">${z?"没问题":"괜찮음"}</button>
+        <button type="button" class="ob-opt ${checkForm.pain===1?"on":""}" data-testid="pain-1" onclick="setCheckField('pain',1)">${z?"有点不舒服":"조금 불편"}</button>
+        <button type="button" class="ob-opt ${checkForm.pain===2?"on":""}" data-testid="pain-2" onclick="setCheckField('pain',2)">${z?"疼痛":"아픔"}</button>
+      </div>
+      <div style="font-size:11px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" data-testid="chk-redflag" ${checkForm.redFlag?"checked":""} onchange="setCheckField('redFlag',this.checked)"><span>${z?"有膝盖危险信号（肿胀/卡住/无法承重）":"위험 신호 있었음"}</span></label></div>
+      <div class="cc-sttl">3. ${z?"完成情况":"다 했나요"}: <span style="color:#fff">${doneTxt}</span></div>
+      <div class="ob-opts">
+        <button type="button" class="ob-opt ${checkForm.missReason==="time"?"on":""}" data-testid="miss-time" onclick="setCheckField('missReason',checkForm.missReason==='time'?null:'time')">${z?"没时间":"시간 없음"}</button>
+        <button type="button" class="ob-opt ${checkForm.missReason==="hard"?"on":""}" data-testid="miss-hard" onclick="setCheckField('missReason',checkForm.missReason==='hard'?null:'hard')">${z?"太吃力":"힘듦"}</button>
+        <button type="button" class="ob-opt ${checkForm.missReason==="pain"?"on":""}" data-testid="miss-pain" onclick="setCheckField('missReason',checkForm.missReason==='pain'?null:'pain')">${z?"疼痛不适":"아픔"}</button>
+      </div>
+      <div class="cc-sttl">${z?"下次偏好 (选填)":"다음 세션 희망 강도 (선택)"}</div>
+      <div class="ob-opts">
+        <button type="button" class="ob-opt ${checkForm.userPick==="easier"?"on":""}" data-testid="pick-easier" onclick="setCheckField('userPick',checkForm.userPick==='easier'?null:'easier')">${z?"更轻松":"더 쉽게"}</button>
+        <button type="button" class="ob-opt ${checkForm.userPick==="same"?"on":""}" data-testid="pick-same" onclick="setCheckField('userPick',checkForm.userPick==='same'?null:'same')">${z?"保持不变":"그대로"}</button>
+        <button type="button" class="ob-opt ${checkForm.userPick==="harder"?"on":""}" data-testid="pick-harder" onclick="setCheckField('userPick',checkForm.userPick==='harder'?null:'harder')">${z?"更有挑战":"더 세게"}</button>
+      </div>
+      <button type="button" class="sbtn" style="margin-top:6px;padding:12px;font-size:14px" data-testid="btn-check-save" onclick="saveCheckSheet()">${z?"保存反馈":"체크 저장"}</button>
+    </div>`;
+  }
+  return h;
+}
+
 // ═══ RENDER ═══
-function render(){const app=document.getElementById("app");
+function render(){
+syncFromStorage();
+const app=document.getElementById("app");
 if(!cfg){app.innerHTML=renderOnboarding();return}
-const today2=td(),tD=data[today2]||{},rawEl=dBtw(cfg.startDate,today2),el=Math.max(0,Math.min(cfg.totalDays-1,rawEl)),left=Math.max(0,dBtw(today2,cfg.endDate)),pct=Math.min(100,Math.round(((el+1)/cfg.totalDays)*100)),lw=latestW(),diffW=lw-cfg.startWeight,toGo=Math.abs(cfg.targetWeight-lw),streak=getStreak(),sun=isSun(today2),qDn=qsDone(today2),qPct=sun?100:Math.round(qDn/QT*100),lvl=getLvl(),nxXp=LVLS[Math.min(lvl+1,LVLS.length-1)],xpP=lvl<LVLS.length-1?Math.round((usr.xp-LVLS[lvl])/(nxXp-LVLS[lvl])*100):100;
+const today2=td();
+if(!coach){coach=loadCoach(cfg);saveCoach(coach)}
+if(coach.lastDaily!==today2){
+  const dc=dailyCheck({coach,cfg,sessions},today2);
+  coach=dc.coach;
+  coach.lastDaily=today2;
+  coach.dailyRules=dc.rules;
+  coach.askUnlock=dc.askUnlock;
+  saveCoach(coach);
+}
+if(checkinDue(coach,today2)){
+  const wc=weeklyCheckin({coach,cfg,data,sessions,learn},today2);
+  coach=wc.coach;
+  cfg=wc.cfg;
+  coach.unreadNote=wc.note;
+  saveCoach(coach);
+  saveC(cfg);
+  notes.push(wc.note);
+  saveNotes(notes);
+}
+const tD=data[today2]||{},rawEl=dBtw(cfg.startDate,today2),el=Math.max(0,Math.min(cfg.totalDays-1,rawEl)),left=Math.max(0,dBtw(today2,cfg.endDate)),pct=Math.min(100,Math.round(((el+1)/cfg.totalDays)*100)),lw=latestW(),diffW=lw-cfg.startWeight,toGo=Math.abs(cfg.targetWeight-lw),streak=getStreak(),sun=isSun(today2),qDn=qsDone(today2),qPct=sun?100:Math.round(qDn/QT*100),lvl=getLvl(),nxXp=LVLS[Math.min(lvl+1,LVLS.length-1)],xpP=lvl<LVLS.length-1?Math.round((usr.xp-LVLS[lvl])/(nxXp-LVLS[lvl])*100):100;
 const calInfo=calcCaloriePlan(cfg);
+const kt=kcalTarget(cfg,coach,coach.lastAvgW);
 let nav=`<div class="bnav">`;[["quest","⚔️",t("quest")],["weight","⚖️",t("weight")],["history","📅",t("history")],["stats","🏅",t("stats")]].forEach(([k,ic,l])=>{nav+=`<button class="${curView===k?"act":""}" data-testid="nav-${k}" onclick="curView='${k}';render()"><span class="ni">${ic}</span>${l}</button>`});nav+=`</div>`;
 let b="";
 // ═══ QUEST ═══
 if(curView==="quest"){
-if(sun){b=`<div class="rest"><div class="re">😴</div><div class="rt">${t("rest")}</div><div class="rs">${t("restSub").replace(/\n/g,"<br>")}</div></div>`}
+b+=renderCoachSection(today2);
+b+=renderCoachSettings();
+if(sun){b+=`<div class="rest"><div class="re">😴</div><div class="rt">${t("rest")}</div><div class="rs">${t("restSub").replace(/\n/g,"<br>")}</div></div>`}
 else{const qs=tD.quests||{},quests=getQuests();
-b+=`<div class="gc"><div class="ds"><div class="rw">${ringSvg(qPct,66)}<div class="rtx"><div class="rn">${qDn}/${QT}</div><div class="rl">${t("done")}</div></div></div><div class="dst"><div class="dsr"><span class="dsl">D${el+1}/${cfg.totalDays} · ${fmtD(today2)}</span><span class="streak-b">🔥 ${streak}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("left")}</span><span class="dsv" style="color:var(--eb)">${left}${t("day")}</span></div><div class="dsr"><span class="dsl">${lang==="zh"?"建议每日总热量":"하루 권장 총 섭취량"}</span><span class="dsv" style="color:var(--cy)">${calInfo.recMin.toLocaleString()}~${calInfo.recMax.toLocaleString()} kcal</span></div><div class="xpbar"><div class="xpfill" style="width:${xpP}%"></div></div><div class="xplbl">Lv.${lvl+1} ${getLN(lvl)} · ${usr.xp}/${nxXp} XP</div></div></div></div>`;
-let lt="";quests.forEach(q=>{const dn=!!qs[q.id];if(q.time!==lt){b+=`<div class="qt">${q.time}<span class="ql"></span></div>`;lt=q.time}b+=`<div class="qi ${dn?"dn":""}" data-testid="quest-${q.id}" onclick="toggleQ('${today2}','${q.id}')"><div class="qc">${dn?"✓":""}</div><div class="qct"><div class="t">${q.title}</div>${q.desc?`<div class="d">${q.desc}</div>`:""}</div><div class="qe">${q.emoji}</div></div>`;if(q.id==="dn"){b+=`<div class="gc2"><div class="ct2">${t("dinnerTitle")} <span style="font-size:10px;color:var(--cy);font-weight:500">(${lang==="zh"?"每日建议总摄入":"일일 총 권장"}: ${calInfo.recMin.toLocaleString()}~${calInfo.recMax.toLocaleString()} kcal)</span></div>`;DCATS.forEach((cat,ci)=>{const nt=dcatNote(cat);b+=`<div class="mc ${openCats[ci]?"op":""}"><div class="mct" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${dcatName(cat)} <span class="mn">${nt}</span></div><div class="ml">${cat.items.map(i=>`<div class="mi">· ${dcatItem(i)}</div>`).join("")}</div></div>`});b+=`</div>`}});
-if(qDn===QT&&!tD.gamePlayed)b+=`<div style="text-align:center;padding:12px"><button class="game-btn" onclick="showGameIntro()">${t("gameUnlock")} 🎮</button></div>`}}
+b+=`<div class="gc"><div class="ds"><div class="rw">${ringSvg(qPct,66)}<div class="rtx"><div class="rn">${qDn}/${QT}</div><div class="rl">${t("done")}</div></div></div><div class="dst"><div class="dsr"><span class="dsl">D${el+1}/${cfg.totalDays} · ${fmtD(today2)}</span><span class="streak-b">🔥 ${streak}${t("day")}</span></div><div class="dsr"><span class="dsl">${t("left")}</span><span class="dsv" style="color:var(--eb)">${left}${t("day")}</span></div><div class="dsr"><span class="dsl">${lang==="zh"?"建议每日总热量":"하루 권장 총 섭취량"}</span><span class="dsv" style="color:var(--cy)">${kt.min.toLocaleString()}~${kt.max.toLocaleString()} kcal</span></div><div class="xpbar"><div class="xpfill" style="width:${xpP}%"></div></div><div class="xplbl">Lv.${lvl+1} ${getLN(lvl)} · ${usr.xp}/${nxXp} XP</div></div></div></div>`;
+let lt="";quests.forEach(q=>{const dn=!!qs[q.id];if(q.time!==lt){b+=`<div class="qt">${q.time}<span class="ql"></span></div>`;lt=q.time}b+=`<div class="qi ${dn?"dn":""}" data-testid="quest-${q.id}" onclick="toggleQ('${today2}','${q.id}')"><div class="qc">${dn?"✓":""}</div><div class="qct"><div class="t">${q.title}</div>${q.desc?`<div class="d">${q.desc}</div>`:""}</div><div class="qe">${q.emoji}</div></div>`;if(q.id==="dn"){b+=`<div class="gc2"><div class="ct2">${t("dinnerTitle")} <span style="font-size:10px;color:var(--cy);font-weight:500">(${lang==="zh"?"每日建议总摄入":"일일 총 권장"}: ${kt.min.toLocaleString()}~${kt.max.toLocaleString()} kcal)</span></div>`;DCATS.forEach((cat,ci)=>{const nt=dcatNote(cat);b+=`<div class="mc ${openCats[ci]?"op":""}"><div class="mct" onclick="openCats[${ci}]=!openCats[${ci}];render()">${cat.icon} ${dcatName(cat)} <span class="mn">${nt}</span></div><div class="ml">${cat.items.map(i=>`<div class="mi">· ${dcatItem(i)}</div>`).join("")}</div></div>`});b+=`</div>`}});
+if(qDn===QT&&!tD.gamePlayed)b+=`<div style="text-align:center;padding:12px"><button class="game-btn" onclick="showGameIntro()">${t("gameUnlock")} 🎮</button></div>`}
+b+=`<button type="button" class="ebtn" style="opacity:1;margin-top:6px" data-testid="btn-coach-settings" onclick="openCoachSettings()">⚙️ ${lang==="zh"?"教练设置":"코치 설정"}</button>`}
 // ═══ WEIGHT ═══
 if(curView==="weight"){
 const bmi=getBMI(),wl=getWeeklyLoss(),pred=getPredictDate();
@@ -1008,7 +2299,9 @@ const sign=diffW>0?"+":diffW<0?"-":"";
 b+=`<div class="gc"><div class="cr"><div><div class="bn glow-cy">${lw}kg</div><div class="dm">${t("current")}</div></div><div style="text-align:right"><div class="bn" style="color:${diffW<=0?"var(--cy)":"var(--ny)"}">${sign}${Math.abs(diffW).toFixed(1)}</div><div class="dm">${t("reduced")}(kg)</div></div></div><div class="pb"><div class="pf" style="width:${pct}%"></div></div><div class="plb">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${t("toGoal")} ${toGo.toFixed(1)}kg</div></div>`;
 b+=`<div class="gc"><div class="cr"><div class="sb"><div class="sn" style="color:var(--nv)">${bmi||"--"}</div><div class="dm">${t("bmi")}</div></div><div class="sb"><div class="sn" style="color:var(--ny)">${wl||"--"}kg</div><div class="dm">${t("wkLoss")}</div></div><div class="sb"><div class="sn" style="color:var(--mg)">${pred}</div><div class="dm">${t("predict")}</div></div></div></div>`;
 b+=`<div class="gc"><div class="ct2">⚖️ ${t("rec")}</div><div style="font-size:10px;color:#556">${t("recTip")}</div><div class="ir"><label for="wi" class="sl" style="display:none">${t("rec")}</label><input type="number" step="0.1" placeholder="kg" id="wi" aria-label="${t("rec")}" value="${tD.weight||""}"/><button class="svb" onclick="saveW()">${t("save")}</button></div>${tD.weight?`<div class="svh">${t("saved").replace("%s",tD.weight)}</div>`:""}</div>`;
-b+=`<div class="gc"><div class="ct2">📉 ${t("trend")}</div>${buildChart()}</div>`}
+b+=`<div class="gc"><div class="ct2">📉 ${t("trend")}</div>${buildChart()}</div>`;
+const revNotes=Array.isArray(notes)?notes.slice().reverse():[];
+b+=`<div class="gc" data-testid="notes-list"><div class="ct2">📋 ${lang==="zh"?"教练周记":"주간 코치 노트"}</div>${revNotes.length?revNotes.map(n=>`<div class="gc2" style="font-size:11px;line-height:1.5"><div style="display:flex;justify-content:space-between;color:var(--cy);font-weight:700"><span>${n.wk}</span><span style="font-size:9px;color:#889">[${(n.rules||[]).join(", ")}]</span></div>${(n.lines||[]).map(l=>`<div>· ${l}</div>`).join("")}</div>`).join(""):`<div class="ech">${t("noData")}</div>`}</div>`}
 // ═══ HISTORY ═══
 if(curView==="history"){
 b+=`<div class="gc"><div class="ct2">📆 ${t("cal")} (${fmtD(cfg.startDate)} ~ ${fmtD(cfg.endDate)})</div>${buildCal()}<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><span style="font-size:8px;color:var(--cy)">■ ≥80%</span><span style="font-size:8px;color:var(--ny)">■ ≥50%</span><span style="font-size:8px;color:var(--np)">■ <50%</span><span style="font-size:8px;color:var(--nv)">■ ${lang==="zh"?"周日":"일"}</span></div></div>`;
@@ -1025,13 +2318,49 @@ b+=`<div class="gc"><div class="ct2">${t("stats")}</div><div class="cr"><div cla
 b+=`<div class="gc"><div class="ct2">🏅 ${t("badges")}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
 BDEFS.forEach(bd=>{const u=bd.ck();b+=`<div class="bdg ${u?"":"locked"}">${bd.icon} ${lang==="zh"?bd.zh:bd.ko}</div>`});
 b+=`</div><div class="bdg-next">${lang==="zh"?"▸ 下个":"▸ 다음"}: ${nextBadge()}</div></div>`;
-b+=`<div class="gc"><div class="ct2">⚙️ ${t("info")}</div><div class="info-r"><span class="info-l">${lang==="zh"?"模式 / 方案":"모드 / 프리셋"}</span><span class="info-v">${modeLabel}${cfg.muscle?(lang==="zh"?" +增肌":" +근육강화"):""}</span></div><div class="info-r"><span class="info-l">${t("startD")} ~ ${t("endD")}</span><span class="info-v" data-testid="info-dates">${cfg.startDate} ~ ${cfg.endDate}</span></div><div class="info-r"><span class="info-l">${t("curW")}</span><span class="info-v">${cfg.startWeight}kg → ${cfg.targetWeight}kg</span></div><div class="info-r"><span class="info-l">${t("days")}</span><span class="info-v">${cfg.totalDays}${t("day")}</span></div><div class="info-r"><span class="info-l">BMR / TDEE</span><span class="info-v">${calInfo.bmrRound.toLocaleString()} / ${calInfo.tdeeRound.toLocaleString()} kcal</span></div><div class="info-r"><span class="info-l">${lang==="zh"?"建议每日总摄入":"권장 일일 섭취량"}</span><span class="info-v">${calInfo.recMin.toLocaleString()}~${calInfo.recMax.toLocaleString()} kcal</span></div><div class="info-r"><span class="info-l">${lang==="zh"?"语言切换":"언어 설정"}</span><span class="info-v"><button type="button" class="lang-btn" onclick="toggleLang()">${lang==="zh"?"한국어로 전환":"中文切换"}</button></span></div></div>`;
+b+=`<div class="gc"><div class="ct2">⚙️ ${t("info")}</div><div class="info-r"><span class="info-l">${lang==="zh"?"模式 / 方案":"모드 / 프리셋"}</span><span class="info-v">${modeLabel}${cfg.muscle?(lang==="zh"?" +增肌":" +근육강화"):""}</span></div><div class="info-r"><span class="info-l">${t("startD")} ~ ${t("endD")}</span><span class="info-v" data-testid="info-dates">${cfg.startDate} ~ ${cfg.endDate}</span></div><div class="info-r"><span class="info-l">${t("curW")}</span><span class="info-v">${cfg.startWeight}kg → ${cfg.targetWeight}kg</span></div><div class="info-r"><span class="info-l">${t("days")}</span><span class="info-v">${cfg.totalDays}${t("day")}</span></div><div class="info-r"><span class="info-l">BMR / TDEE</span><span class="info-v">${calInfo.bmrRound.toLocaleString()} / ${kt.tdee.toLocaleString()} kcal</span></div><div class="info-r"><span class="info-l">${lang==="zh"?"建议每日总摄入":"권장 일일 섭취량"}</span><span class="info-v">${kt.min.toLocaleString()}~${kt.max.toLocaleString()} kcal</span></div><div class="info-r"><span class="info-l">${lang==="zh"?"语言切换":"언어 설정"}</span><span class="info-v"><button type="button" class="lang-btn" onclick="toggleLang()">${lang==="zh"?"한국어로 전환":"中文切换"}</button></span></div></div>`;
+b+=renderCoachSettings();
+b+=`<button type="button" class="ebtn" style="opacity:1" data-testid="btn-coach-settings" onclick="openCoachSettings()">⚙️ ${lang==="zh"?"教练设置":"코치 설정"}</button>`;
 b+=`<button type="button" class="ebtn" style="opacity:1" data-testid="btn-export" onclick="exportBackup()">${t("exportBtn")}</button>`;
 b+=`<button type="button" class="ebtn" style="opacity:1" data-testid="btn-import" onclick="triggerImport()">${t("importBtn")}</button>`;
 b+=`<input type="file" id="import-file-input" data-testid="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(event)">`;
 b+=`<button type="button" class="ebtn" data-testid="btn-end" onclick="endC()">${t("end")}</button><button type="button" class="rbtn" data-testid="btn-reset" onclick="resetAll()">${t("reset")}</button>`}
 const footerDisc=`<div class="disc" data-testid="disclaimer-footer">⚠️ ${t("disclaimer")}</div>`;
 app.innerHTML=`<div class="hdr"><div class="logo">🔥 ${t("appTitle")}</div><div class="hdr-r"><span class="lvl-b">Lv.${lvl+1} ${getLN(lvl)}</span><button type="button" class="lang-btn" data-testid="btn-lang" onclick="toggleLang()">${lang==="zh"?"한국어":"中文"}</button></div></div><div class="hdr-sub">${cfg.startWeight}kg → ${cfg.targetWeight}kg · ${cfg.totalDays}${t("day")} (${cfg.startDate}~${cfg.endDate})</div><div class="ct">${b}${footerDisc}</div>${nav}`}
+
+function _buildInitialCoach(cfgObj,isHook,customPlan){
+  const c=defaultCoach(cfgObj);
+  if(isHook){
+    if(customPlan&&customPlan.coach&&typeof customPlan.coach==="object"){
+      const pc=customPlan.coach;
+      if(Array.isArray(pc.places))c.places=cloneObj(pc.places);
+      if(pc.activePlace!==undefined)c.activePlace=pc.activePlace;
+      if(pc.joints&&typeof pc.joints==="object")c.joints=Object.assign({},c.joints,pc.joints);
+      if(pc.fitness&&typeof pc.fitness==="object")c.fitness=Object.assign({},c.fitness,pc.fitness);
+      if(Array.isArray(pc.slots)&&pc.slots.length)c.slots=cloneObj(pc.slots);
+      if(Array.isArray(pc.days)&&pc.days.length)c.days=pc.days.slice();
+      if(Array.isArray(pc.equip))c.equip=pc.equip.slice();
+      if(pc.level)c.level=pc.level;
+      if(pc.checkinDow!==undefined)c.checkinDow=pc.checkinDow;
+      if(c.level==="hard"&&!hardAllowed(c,cfgObj))c.level="normal";
+      c.plan=pc.plan?cloneObj(pc.plan):initialPlan(c,cfgObj);
+    }
+    return c;
+  }
+  const topF=parseInt(ob.obTopFloor,10)||parseInt(ob.obFloors,10)||0;
+  const totF=parseInt(ob.obFloors,10)||topF||0;
+  const stF=parseInt(ob.obStartFloor,10)||1;
+  if(topF>0){
+    c.places=[{name:ob.obPlaceName||"home",floorsTotal:totF,startFloor:stF,topFloor:topF,elevator:ob.obElev||"yes",handrail:Boolean(ob.obHandrail)}];
+  }
+  c.joints.knee=_effObKnee();
+  if(ob.obQuick)c.fitness.quick=ob.obQuick;
+  c.slots=[{name:ob.obSlot||"evening",min:Number(ob.obMin)||5}];
+  c.level=ob.obLevel||"easy";
+  if(c.level==="hard"&&!hardAllowed(c,cfgObj))c.level="normal";
+  c.plan=initialPlan(c,cfgObj);
+  return c;
+}
 
 function startC(customPlan){
   syncObInputs();
@@ -1063,7 +2392,7 @@ function startC(customPlan){
   const endDate=addD(startDate,days-1);
   const cal=calcCaloriePlan(fullPlan);
   cfg={
-    schemaVersion:2,
+    schemaVersion:3,
     goal,
     muscle:!!fullPlan.muscle,
     sex:fullPlan.sex,
@@ -1085,7 +2414,7 @@ function startC(customPlan){
     allergy:fullPlan.allergy||"none",
     allergyMemo:fullPlan.allergyMemo||"",
     exTime:fullPlan.exTime||"10",
-    exPlace:fullPlan.exPlace||"shop",
+    exPlace:fullPlan.exPlace||"",
     preset:goal==="loss"?(fullPlan.preset||"flex"):goal,
     bmr:cal.bmrRound,
     tdee:cal.tdeeRound,
@@ -1093,6 +2422,12 @@ function startC(customPlan){
     recCalMax:cal.recMax
   };
   saveC(cfg);
+  coach=_buildInitialCoach(cfg,isHook,customPlan);
+  saveCoach(coach);
+  saveSessions([]);
+  saveLearn(defaultLearn());
+  saveNotes([]);
+  checkSheetOpen=false;s1Open=false;settingsOpen=false;retestOpen=false;lastCoachMsg="";
   data={};
   data[startDate]={weight:sw};
   saveD(data);
@@ -1101,11 +2436,17 @@ function startC(customPlan){
   curView="quest";
   toast(lang==="zh"?"挑战开始！💪":"도전 시작! 💪");
   render();
-  return{ok:true,cfg};
+  return{ok:true,cfg,coach};
 }
 function saveW(){const v=parseFloat(document.getElementById("wi").value);if(v>30&&v<300)sdf(td(),"weight",v);else toast(lang==="zh"?"请输入有效体重":"유효한 체중")}
-function endC(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"确定结束？":"종료할까요?")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};ob=defaultOb();obStep=1;curView="quest";render()}}
-function resetAll(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){localStorage.removeItem(CK);localStorage.removeItem(DK);localStorage.removeItem(UK);cfg=null;data={};usr={xp:0};ob=defaultOb();obStep=1;curView="quest";render()}}
+function _clearAllState(){
+  [CK,DK,UK,COK,SEK,LEK,NOK].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  cfg=null;data={};usr={xp:0};coach=null;sessions=[];learn=defaultLearn();notes=[];
+  checkSheetOpen=false;s1Open=false;settingsOpen=false;retestOpen=false;lastCoachMsg="";
+  ob=defaultOb();obStep=1;curView="quest";
+}
+function endC(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"确定结束？":"종료할까요?")){_clearAllState();render()}}
+function resetAll(skipConfirm){if(skipConfirm||confirm(lang==="zh"?"清除所有？不可恢复":"전체 삭제? 복구 불가")){_clearAllState();render()}}
 
 // ═══ TEST & VERIFICATION HOOKS ═══
 window.__burn60={
@@ -1120,7 +2461,25 @@ window.__burn60={
   resetAll:(skipConfirm=true)=>resetAll(skipConfirm),
   getQuests:getQuests,
   getConfig:()=>cfg,
-  setLang:setLang
+  setLang:setLang,
+  coach:{
+    initialPlan,
+    judge,
+    hardAllowed,
+    ladderUp,
+    ladderDown,
+    canMove,
+    weekKey,
+    adherence,
+    applySession,
+    unlock,
+    dailyCheck,
+    weeklyCheckin,
+    avgWeight,
+    kcalTarget,
+    checkinDue,
+    acceptMaintenance
+  }
 };
 render();
 </script>
